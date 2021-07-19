@@ -8,4 +8,4 @@ Now this project has:
  * "Interface" to write fragment and vertex shaders
  * No external libraries
  
- 
+ ![Buffers](https://user-images.githubusercontent.com/48869588/126238993-aac61fe7-a4e5-4d8c-8111-4e41abe2eda7.png)
