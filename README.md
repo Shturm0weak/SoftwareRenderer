@@ -7,5 +7,5 @@ Now this project has:
  * Depth buffer
  * "Interface" to write fragment and vertex shaders
  * No external libraries
- 
- ![Buffers](https://user-images.githubusercontent.com/48869588/126238993-aac61fe7-a4e5-4d8c-8111-4e41abe2eda7.png)
+
+![Buffers](https://user-images.githubusercontent.com/48869588/126242966-e1c7cbbd-2c98-44e9-85ea-144c0c3b26f9.png)
