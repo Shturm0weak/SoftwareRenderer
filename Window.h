@@ -24,21 +24,22 @@ namespace sr
 		bool ProcessMessages();
 	public:
 
-		std::wstring m_Title;
-		glm::ivec2 m_Size;
-		bool m_IsRunning = true;
-		BUFFER_STATE m_DrawBuffer = BUFFER_STATE::SHADER;
+		std::wstring s_Title;
+		glm::ivec2 s_Size;
+		BUFFER_STATE s_DrawBuffer = BUFFER_STATE::SHADER;
+		bool s_IsRunning = true;
 	private:
 
 		Window() = default;
 	private:
 
-		HINSTANCE m_HInstance;
-		HWND m_HWnd;
-		BITMAPINFO m_BitMapInfo;
-		glm::ivec2 m_BitMapSize;
-		float* m_DepthBuffer = nullptr;
-		void* m_BitMapMemory = nullptr;
+		HINSTANCE s_HInstance;
+		HWND s_HWnd;
+		BITMAPINFO s_BitMapInfo;
+		glm::ivec2 s_BitMapSize;
+		float* s_DepthBuffer = nullptr;
+		void* s_BitMapMemory = nullptr;
+
 		friend class Renderer;
 	};
 

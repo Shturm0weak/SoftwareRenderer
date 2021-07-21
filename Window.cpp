@@ -91,15 +91,15 @@ LRESULT CALLBACK sr::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 void sr::Window::Init(std::wstring title, glm::ivec2 size)
 {
-    m_Title = title;
-    m_Size = size;
-    m_HInstance = GetModuleHandle(nullptr);
+    s_Title = title;
+    s_Size = size;
+    s_HInstance = GetModuleHandle(nullptr);
 
     const wchar_t* className = L"WINDOWCLASS";
 
     WNDCLASS wndClass = {};
     wndClass.lpszClassName = className;
-    wndClass.hInstance = m_HInstance;
+    wndClass.hInstance = s_HInstance;
     wndClass.hIcon = LoadIcon(NULL, IDI_WINLOGO);
     wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
     wndClass.style = CS_DBLCLKS;
@@ -116,10 +116,10 @@ void sr::Window::Init(std::wstring title, glm::ivec2 size)
 
     AdjustWindowRect(&rect, style, false);
 
-    m_HWnd = CreateWindowEx(
+    s_HWnd = CreateWindowEx(
         0,
         className,
-        m_Title.c_str(),
+        s_Title.c_str(),
         style,
         rect.left,
         rect.top,
@@ -127,17 +127,17 @@ void sr::Window::Init(std::wstring title, glm::ivec2 size)
         rect.bottom - rect.top,
         NULL,
         NULL,
-        m_HInstance,
+        s_HInstance,
         NULL
     );
 
-    ShowWindow(m_HWnd, SW_SHOW);
+    ShowWindow(s_HWnd, SW_SHOW);
 }
 
 sr::Window::~Window()
 {
     const wchar_t* className = L"WINDOWCLASS";
-    UnregisterClass(className, m_HInstance);
+    UnregisterClass(className, s_HInstance);
 }
 
 bool sr::Window::ProcessMessages()
@@ -162,54 +162,54 @@ sr::Window& sr::Window::GetInstance()
 
 void sr::Window::Resize(glm::ivec2 size)
 {
-    if (m_BitMapMemory)
+    if (s_BitMapMemory)
     {
-        VirtualFree(m_BitMapMemory, 0, MEM_RELEASE);
-        delete[] m_DepthBuffer;
+        VirtualFree(s_BitMapMemory, 0, MEM_RELEASE);
+        delete[] s_DepthBuffer;
     }
 
-    m_Size = size;
-    m_BitMapSize = size;
+    s_Size = size;
+    s_BitMapSize = size;
 
-    m_BitMapInfo.bmiHeader.biSize = sizeof(m_BitMapInfo.bmiHeader);
-    m_BitMapInfo.bmiHeader.biWidth = size.x;
-    m_BitMapInfo.bmiHeader.biHeight = size.y;
-    m_BitMapInfo.bmiHeader.biPlanes = 1;
-    m_BitMapInfo.bmiHeader.biBitCount = 32;
-    m_BitMapInfo.bmiHeader.biCompression = BI_RGB;
+    s_BitMapInfo.bmiHeader.biSize = sizeof(s_BitMapInfo.bmiHeader);
+    s_BitMapInfo.bmiHeader.biWidth = size.x;
+    s_BitMapInfo.bmiHeader.biHeight = size.y;
+    s_BitMapInfo.bmiHeader.biPlanes = 1;
+    s_BitMapInfo.bmiHeader.biBitCount = 32;
+    s_BitMapInfo.bmiHeader.biCompression = BI_RGB;
 
-    int m_BitMapMemorySize = (m_BitMapSize.x * m_BitMapSize.y) * 4;
-    m_BitMapMemory = VirtualAlloc(0, m_BitMapMemorySize, MEM_COMMIT, PAGE_READWRITE);
-    m_DepthBuffer = new float[m_BitMapSize.x * m_BitMapSize.y];
+    int m_BitMapMemorySize = (s_BitMapSize.x * s_BitMapSize.y) * 4;
+    s_BitMapMemory = VirtualAlloc(0, m_BitMapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+    s_DepthBuffer = new float[s_BitMapSize.x * s_BitMapSize.y];
 
     //sr::Scene::GetInstance().camera.RecalculateProjectionMatrix(); due to call this in Camera::Move() every frame
 }
 
 void sr::Window::Update()
 {
-    HDC DeviceContext = GetDC(m_HWnd);
+    HDC DeviceContext = GetDC(s_HWnd);
     RECT rect = {};
-    GetClientRect(m_HWnd, &rect);
+    GetClientRect(s_HWnd, &rect);
     int windowWidth = rect.right - rect.left;
     int windowHeight = rect.bottom - rect.top;
     StretchDIBits(DeviceContext,
-        0, 0, m_BitMapSize.x, m_BitMapSize.y,
+        0, 0, s_BitMapSize.x, s_BitMapSize.y,
         0, 0, windowWidth, windowHeight,
-        m_BitMapMemory,
-        &m_BitMapInfo,
+        s_BitMapMemory,
+        &s_BitMapInfo,
         DIB_RGB_COLORS, SRCCOPY
     );
-    ReleaseDC(m_HWnd, DeviceContext);
+    ReleaseDC(s_HWnd, DeviceContext);
 }
 
 void sr::Window::Clear(glm::ivec3 color)
 {
-    for (size_t i = 0; i < m_BitMapSize.x; i++)
+    for (size_t i = 0; i < s_BitMapSize.x; i++)
     {
-        for (size_t j = 0; j < m_BitMapSize.y; j++)
+        for (size_t j = 0; j < s_BitMapSize.y; j++)
         {
             Renderer::FillPixel(glm::ivec2(i, j), color);
-            m_DepthBuffer[j * m_BitMapSize.x + i] = 1.0f;
+            s_DepthBuffer[j * s_BitMapSize.x + i] = 1.0f;
         }
     }
 }

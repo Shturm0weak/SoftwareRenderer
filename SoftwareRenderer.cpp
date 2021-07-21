@@ -1168,11 +1168,11 @@ namespace objl
 						mesh->m_Triangles.back().m_Indices[0] = curMesh.Indices[j + 0];
 						mesh->m_Triangles.back().m_Indices[1] = curMesh.Indices[j + 1];
 						mesh->m_Triangles.back().m_Indices[2] = curMesh.Indices[j + 2];
-						mesh->m_Triangles.back().m_C[0] = glm::ivec3(255, 0, 0);
-						mesh->m_Triangles.back().m_C[1] = glm::ivec3(0, 255, 0);
-						mesh->m_Triangles.back().m_C[2] = glm::ivec3(0, 102, 255);
+						mesh->m_Triangles.back().m_C[0] = glm::ivec3(220, 220, 220);
+						mesh->m_Triangles.back().m_C[1] = glm::ivec3(220, 220, 220);
+						mesh->m_Triangles.back().m_C[2] = glm::ivec3(220, 220, 220);
 					}
-					sr::Scene::GetInstance().m_Meshes.push_back(mesh);
+					sr::Scene::GetInstance().s_Meshes.push_back(mesh);
 					return mesh;
 				}
 			}
@@ -1185,78 +1185,91 @@ int main(void)
 	sr::Scene& scene = sr::Scene::GetInstance();
 	sr::Window& window = sr::Window::GetInstance();
 	window.Init(L"Software renderer", glm::ivec2(1280, 720));
-
+	scene.s_Camera.m_Position = glm::vec3(0.0f, 2.0f, 5.0f);
 	sr::GameObject go;
-	go.m_Mesh = objl::Loader::Load("assets/Cube.obj");
+	go.m_Mesh = objl::Loader::Load("assets/Car.obj");
 	go.m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
 	go.m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-	
-	sr::GameObject go1;
-	go1.m_Mesh = objl::Loader::Load("assets/Cube.obj");
-	go1.m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-	go1.m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.8f));
-	//go1.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(1.0f));
 
 	sr::Shader shader;
 	shader.m_VertexShader = [](
 		const sr::Transform& transform,
 		const glm::mat4& transformMat,
+		const glm::vec4& transformedPosition,
 		const glm::vec3& position,
 		const glm::vec3& normal)
 	{
-		return sr::Scene::GetInstance().m_Camera.m_ProjectionMartix * transformMat * glm::vec4(position, 1.0f);
+		return sr::Scene::GetInstance().s_Camera.m_ProjectionMartix * transformedPosition;
 	};
 
 	shader.m_FragmentShader = [](
+		const glm::vec3& worldPos,
 		const glm::ivec2& fragPos,
 		const glm::vec3& normal,
 		const glm::ivec3& color)
 	{
 		sr::Scene& scene = sr::Scene::GetInstance();
 		sr::Window& window = sr::Window::GetInstance();
-		glm::vec3 newColor = { color.x / 255.0f, color.y / 255.0f, color.z / 255.0f };
-		glm::vec3 ambient = newColor* 0.7f;
-		scene.m_LightDir = glm::vec3(glm::cos(scene.m_Time.m_GlobalTime),
-			glm::sin(scene.m_Time.m_GlobalTime), glm::cos(scene.m_Time.m_GlobalTime));
-		scene.m_LightDir = Normalize(scene.m_LightDir);
-		float diffuseStrength = glm::dot(normal, scene.m_LightDir) > 0.0f ? glm::dot(normal, scene.m_LightDir) : 0.0f;
-		
-		ambient *= diffuseStrength;
+		glm::vec3 ambient = { color.x / 255.0f, color.y / 255.0f, color.z / 255.0f };
+		//scene.m_LightDir = glm::vec3(glm::cos(scene.m_Time.m_GlobalTime),
+			//glm::sin(scene.m_Time.m_GlobalTime), glm::cos(scene.m_Time.m_GlobalTime));
+		scene.s_LightDir = Normalize(scene.s_LightDir);
+		float diffuseStrength = 1.0f * Max(glm::dot(normal, scene.s_LightDir), 0.0f);
+
+		glm::vec3 viewDir = Normalize(scene.s_Camera.m_Position - worldPos);
+		glm::vec3 reflectDir = Reflect(-scene.s_LightDir, normal);
+		float specular = 2.0f * glm::pow(Max(glm::dot(viewDir, reflectDir), 0.0f), 32);
+
+		ambient *= (diffuseStrength + specular);
+		ambient = Clamp(ambient, glm::vec3(1.0f));
 		return glm::ivec3(ambient * 255.0f);
 	};
-	scene.m_BindedShader = &shader;
+	scene.s_BindedShader = &shader;
 
-	while (window.m_IsRunning)
+	float angle = 0.0f;
+
+	while (window.s_IsRunning)
 	{
 		if (window.ProcessMessages() == false)
-			window.m_IsRunning = false;
+			window.s_IsRunning = false;
 
 		float time = std::chrono::duration<float>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-		scene.m_Time.m_DeltaTime = fabs(scene.m_Time.m_LastTime - time);
-		scene.m_Time.m_LastTime = time;
-		scene.m_Time.m_GlobalTime += scene.m_Time.m_DeltaTime;
+		scene.s_Time.m_DeltaTime = fabs(scene.s_Time.m_LastTime - time);
+		scene.s_Time.m_LastTime = time;
+		scene.s_Time.m_GlobalTime += scene.s_Time.m_DeltaTime;
 
 		if (sr::Input::IsKeyPressed(0x46))
 		{
-			if (window.m_DrawBuffer == sr::BUFFER_STATE::SHADER)
-				window.m_DrawBuffer = sr::BUFFER_STATE::AMBIENT;
-			else if (window.m_DrawBuffer == sr::BUFFER_STATE::AMBIENT)
-				window.m_DrawBuffer = sr::BUFFER_STATE::DEPTH;
-			else if (window.m_DrawBuffer == sr::BUFFER_STATE::DEPTH)
-				window.m_DrawBuffer = sr::BUFFER_STATE::SHADER;
+			if (window.s_DrawBuffer == sr::BUFFER_STATE::SHADER)
+				window.s_DrawBuffer = sr::BUFFER_STATE::AMBIENT;
+			else if (window.s_DrawBuffer == sr::BUFFER_STATE::AMBIENT)
+				window.s_DrawBuffer = sr::BUFFER_STATE::DEPTH;
+			else if (window.s_DrawBuffer == sr::BUFFER_STATE::DEPTH)
+				window.s_DrawBuffer = sr::BUFFER_STATE::SHADER;
 		}
 
-		//printf_s("%f\n", 1.0 / sr::s_DeltaTime);
-		go1.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), scene.m_Time.m_GlobalTime * 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-		scene.m_Camera.Move();
+		if (sr::Input::IsKeyDown(0x4C))
+		{
+			angle += scene.s_Time.m_DeltaTime;
+			go.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+		else if (sr::Input::IsKeyDown(0x4B))
+		{
+			angle -= scene.s_Time.m_DeltaTime;
+			go.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+
+		printf_s("%f\n", 1.0f / scene.s_Time.m_DeltaTime);
+		//go.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), scene.s_Time.m_GlobalTime * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+		scene.s_Camera.Move();
 		window.Clear(glm::ivec3(255));
 		scene.DrawGameObjects();
 		window.Update();
 	}
 
-	for (size_t i = 0; i < scene.m_Meshes.size(); i++)
+	for (size_t i = 0; i < scene.s_Meshes.size(); i++)
 	{
-		delete scene.m_Meshes[i];
+		delete scene.s_Meshes[i];
 	}
 
     return 0;

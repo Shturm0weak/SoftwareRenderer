@@ -13,13 +13,12 @@ namespace sr
 		~Scene() = default;
 	public:
 
-		std::vector<Mesh*> m_Meshes;
-		std::vector<GameObject*> m_GameObjects;
-		glm::vec3 m_LightDir = { 0.0f, 0.0f, 1.0f };
-		Camera m_Camera;
-		Time m_Time;
-		Shader* m_BindedShader = nullptr;
-		OutParams m_OutParams;
+		std::vector<Mesh*> s_Meshes;
+		std::vector<GameObject*> s_GameObjects;
+		Camera s_Camera;
+		Time s_Time;
+		glm::vec3 s_LightDir = Normalize({ 0.5f, 0.5f, 0.5f });
+		Shader* s_BindedShader = nullptr;
 	public:
 
 		inline static Scene& GetInstance();

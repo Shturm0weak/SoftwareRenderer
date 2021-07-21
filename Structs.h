@@ -12,6 +12,14 @@ namespace sr
 
 	struct Camera
 	{
+		glm::mat4 m_ProjectionMartix;
+		glm::mat4 m_InverseProjectionMartix;
+		glm::mat4 m_View;
+		glm::vec3 m_Back;
+		glm::vec3 m_Forward;
+		glm::vec3 m_Right;
+		glm::vec3 m_Up;
+		glm::vec3 m_Position;
 		float m_Roll = 0.0f;
 		float m_Pitch = 0.0f;
 		float m_Yaw = 0.0f;
@@ -20,13 +28,6 @@ namespace sr
 		float m_Znear = 0.1f;
 		float m_Zfar = 1000.0f;
 		float m_Fov = glm::radians(60.0f);
-		glm::mat4 m_ProjectionMartix;
-		glm::mat4 m_View;
-		glm::vec3 m_Back;
-		glm::vec3 m_Forward;
-		glm::vec3 m_Right;
-		glm::vec3 m_Up;
-		glm::vec3 m_Position;
 
 		void RecalculateProjectionMatrix();
 		void Move();
@@ -41,21 +42,31 @@ namespace sr
 
 	struct Vertex
 	{
-		glm::vec3 m_P; //position
+		glm::vec3 m_P; //position in screen space
+		glm::vec3 m_WorldPos; //interpolated position in world space
+		glm::vec3 m_Normal; //interpolated transformed normal
 		glm::ivec3 m_C; //color
 	};
 
 	struct Point
 	{
-		glm::ivec2 m_P; //position
+		glm::vec3 m_WorldPos; //interpolated position in world space
+		glm::vec3 m_Normal; //interpolated transformed normal
 		glm::ivec3 m_C; //color
+		glm::ivec2 m_P; //position in screen space
 		float m_Z; //interpolated z component for a depth buffer
 
-		Point(glm::ivec2 p = glm::ivec2(0), glm::ivec3 c = glm::ivec3(255, 255, 255), float z = 0.0f)
+		Point(const glm::ivec2& p = glm::ivec2(0),
+			const glm::ivec3& c = glm::ivec3(255, 255, 255),
+			const glm::vec3& fragPos = glm::vec3(0.0f),
+			const glm::vec3& normal = glm::vec3(0.0f),
+			float z = 0.0f)
 		{
-			this->m_P = p;
-			this->m_C = c;
-			this->m_Z = z;
+			m_P = p;
+			m_C = c;
+			m_Z = z;
+			m_WorldPos = fragPos;
+			m_Normal = normal;
 		}
 
 		Point(const Vertex& vertex)
@@ -102,13 +113,8 @@ namespace sr
 
 	struct Shader
 	{
-		std::function<glm::vec4 (const Transform&, const glm::mat4&, const glm::vec3&, const glm::vec3&)> m_VertexShader;
-		std::function<glm::ivec3 (const glm::ivec2&, const glm::vec3&, const glm::ivec3&)> m_FragmentShader;
-	};
-
-	struct OutParams
-	{
-		glm::vec3 m_Normal;
+		std::function<glm::vec4 (const Transform&, const glm::mat4&, const glm::vec4&, const glm::vec3&, const glm::vec3&)> m_VertexShader;
+		std::function<glm::ivec3 (const glm::vec3&, const glm::ivec2&, const glm::vec3&, const glm::ivec3&)> m_FragmentShader;
 	};
 
 	enum class INPUT_STATE
