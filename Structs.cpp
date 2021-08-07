@@ -32,7 +32,8 @@ void sr::Camera::RecalculateProjectionMatrix()
 void sr::Camera::Move()
 {
     Clamp();
-    float speed = 5;
+    float speed = 5.0f;
+    float rotationSpeed = 1.0f;
     float delta = Scene::GetInstance().s_Time.m_DeltaTime;
     if (Input::IsKeyDown(0x57))
     {
@@ -60,19 +61,19 @@ void sr::Camera::Move()
     }
     if (Input::IsKeyDown(0x25))
     {
-        m_Yaw += speed * delta;
+        m_Yaw += rotationSpeed * delta;
     }
     if (Input::IsKeyDown(0x27))
     {
-        m_Yaw -= speed * delta;
+        m_Yaw -= rotationSpeed * delta;
     }
     if (Input::IsKeyDown(0x26))
     {
-        m_Pitch += speed * delta;
+        m_Pitch += rotationSpeed * delta;
     }
     if (Input::IsKeyDown(0x28))
     {
-        m_Pitch -= speed * delta;
+        m_Pitch -= rotationSpeed * delta;
     }
     RecalculateProjectionMatrix();
 }

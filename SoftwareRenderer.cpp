@@ -1233,7 +1233,7 @@ int main(void)
 		if (window.ProcessMessages() == false)
 			window.s_IsRunning = false;
 
-		float time = std::chrono::duration<float>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+		double time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 		scene.s_Time.m_DeltaTime = fabs(scene.s_Time.m_LastTime - time);
 		scene.s_Time.m_LastTime = time;
 		scene.s_Time.m_GlobalTime += scene.s_Time.m_DeltaTime;

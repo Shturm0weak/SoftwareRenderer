@@ -1,11 +1,8 @@
-﻿  SoftwareRenderer.cpp
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(929,18): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1221,18): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1277,1): warning C4506: нет определения для подставляемой функции "sr::Window &sr::Window::GetInstance(void)"
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1277,1): warning C4506: нет определения для подставляемой функции "sr::Scene &sr::Scene::GetInstance(void)"
+﻿  Utils.cpp
   Создание кода
-  1 of 1289 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Utils.cpp(185): warning C4715: Triangle_ClipAgainstPlane: значение возвращается не при всех путях выполнения
+  3 of 1345 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    3 functions had inline decision re-evaluated but remain unchanged
+    5 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   SoftwareRenderer.vcxproj -> C:\Users\Alexandr\source\repos\SoftwareRenderer\x64\Release\SoftwareRenderer.exe

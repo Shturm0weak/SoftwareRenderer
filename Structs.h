@@ -98,9 +98,9 @@ namespace sr
 
 	struct Time
 	{
-		float m_DeltaTime = 0.0f;
-		float m_LastTime = 0.0f;
-		float m_GlobalTime = 0.0f;
+		double m_DeltaTime = 0.0f;
+		double m_LastTime = 0.0f;
+		double m_GlobalTime = 0.0f;
 	};
 
 	struct GameObject
