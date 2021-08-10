@@ -73,12 +73,12 @@ void sr::Renderer::FillTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 			1.0f - scalef
 		};
 
-		v4.m_P.z = Interpolate(v1.m_P.z, v3.m_P.z, scale[1]);
+		v4.m_P.z = Lerp(v1.m_P.z, v3.m_P.z, scale[1]);
 
-		//the same as v4.m_C = Interpolate(v1.m_C, v3.m_C, scale2);
+		//the same as v4.m_C = Interpolate(v1.m_C, v3.m_C, scale[1]);
 		v4.m_C = scale[0] * glm::vec3(v1.m_C) + scale[1] * glm::vec3(v3.m_C);
-		v4.m_WorldPos = Interpolate(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
-		v4.m_Normal = Interpolate(v1.m_Normal, v3.m_Normal, scale[1]);
+		v4.m_WorldPos = Lerp(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
+		v4.m_Normal = Lerp(v1.m_Normal, v3.m_Normal, scale[1]);
 
 		if (v2.m_P.x < v4.m_P.x)
 		{
@@ -134,13 +134,13 @@ void sr::Renderer::DrawFlatLine(Point v1, Point v2)
 		glm::ivec3 color = scale[0] * glm::vec3(v1.m_C) + scale[1] * glm::vec3(v2.m_C);
 		glm::ivec2 fragPos = glm::ivec2(glm::ceil(newStart.x), glm::ceil(newStart.y));
 
-		glm::vec3 worldPos = Interpolate(v2.m_WorldPos, v1.m_WorldPos, scale[0]);
-		glm::vec3 normal = Interpolate(v2.m_Normal, v1.m_Normal, scale[0]);
+		glm::vec3 worldPos = Lerp(v2.m_WorldPos, v1.m_WorldPos, scale[0]);
+		glm::vec3 normal = Lerp(v2.m_Normal, v1.m_Normal, scale[0]);
 
 		float* depthPixel = GetDepthPixel(fragPos);
 		if (depthPixel != nullptr)
 		{
-			float z = 1.0f - (1.0f / Interpolate(v2.m_Z, v1.m_Z, scale[0]));
+			float z = 1.0f - (1.0f / Lerp(v2.m_Z, v1.m_Z, scale[0]));
 			if (z < *depthPixel)
 			{
 				*depthPixel = z;
@@ -193,15 +193,15 @@ void sr::Renderer::FillTopFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 		color[0] = scale[0] * glm::vec3(v1.m_C) + scale[1] * glm::vec3(v3.m_C);
 		color[1] = scale[0] * glm::vec3(v2.m_C) + scale[1] * glm::vec3(v3.m_C);
 
-		glm::vec2 z = { Interpolate(v1.m_P.z, v3.m_P.z, scale[1]), Interpolate(v2.m_P.z, v3.m_P.z, scale[1]) };
+		glm::vec2 z = { Lerp(v1.m_P.z, v3.m_P.z, scale[1]), Lerp(v2.m_P.z, v3.m_P.z, scale[1]) };
 
 		glm::vec3 worldPos[2];
-		worldPos[0] = Interpolate(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
-		worldPos[1] = Interpolate(v2.m_WorldPos, v3.m_WorldPos, scale[1]);
+		worldPos[0] = Lerp(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
+		worldPos[1] = Lerp(v2.m_WorldPos, v3.m_WorldPos, scale[1]);
 
 		glm::vec3 normal[2];
-		normal[0] = Interpolate(v1.m_Normal, v3.m_Normal, scale[1]);
-		normal[1] = Interpolate(v2.m_Normal, v3.m_Normal, scale[1]);
+		normal[0] = Lerp(v1.m_Normal, v3.m_Normal, scale[1]);
+		normal[1] = Lerp(v2.m_Normal, v3.m_Normal, scale[1]);
 
 		glm::vec2 px = {
 			invSlope[0] * (float(y) + 0.5f - v1.m_P.y) + v1.m_P.x,
@@ -214,7 +214,7 @@ void sr::Renderer::FillTopFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 		};
 
 		Point p1(glm::ivec2(xPos[0], y), color[0], worldPos[0], normal[0], z[0]);
-		Point p2(glm::ivec2(xPos[1], y), color[1], worldPos[1], normal[1], z[0]);
+		Point p2(glm::ivec2(xPos[1], y), color[1], worldPos[1], normal[1], z[1]);
 
 		DrawFlatLine(p1, p2);
 	}
@@ -244,15 +244,15 @@ void sr::Renderer::FillBottomFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 		color[0] = scale[0] * glm::vec3(v1.m_C) + scale[1] * glm::vec3(v2.m_C);
 		color[1] = scale[0] * glm::vec3(v1.m_C) + scale[1] * glm::vec3(v3.m_C);
 
-		glm::vec2 z = { Interpolate(v1.m_P.z, v2.m_P.z, scale[1]), Interpolate(v1.m_P.z, v3.m_P.z, scale[1]) };
+		glm::vec2 z = { Lerp(v1.m_P.z, v2.m_P.z, scale[1]), Lerp(v1.m_P.z, v3.m_P.z, scale[1]) };
 
 		glm::vec3 worldPos[2];
-		worldPos[0] = Interpolate(v1.m_WorldPos, v2.m_WorldPos, scale[1]);
-		worldPos[1] = Interpolate(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
+		worldPos[0] = Lerp(v1.m_WorldPos, v2.m_WorldPos, scale[1]);
+		worldPos[1] = Lerp(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
 
 		glm::vec3 normal[2];
-		normal[0] = Interpolate(v1.m_Normal, v2.m_Normal, scale[1]);
-		normal[1] = Interpolate(v1.m_Normal, v3.m_Normal, scale[1]);
+		normal[0] = Lerp(v1.m_Normal, v2.m_Normal, scale[1]);
+		normal[1] = Lerp(v1.m_Normal, v3.m_Normal, scale[1]);
 
 		glm::vec2 px = {
 			invSlope[0] * (float(y) + 0.5f - v1.m_P.y) + v1.m_P.x,

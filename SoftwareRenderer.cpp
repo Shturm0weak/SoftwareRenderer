@@ -1185,7 +1185,7 @@ int main(void)
 	sr::Scene& scene = sr::Scene::GetInstance();
 	sr::Window& window = sr::Window::GetInstance();
 	window.Init(L"Software renderer", glm::ivec2(1280, 720));
-	scene.s_Camera.m_Position = glm::vec3(0.0f, 2.0f, 5.0f);
+	scene.s_Camera.m_Position = glm::vec3(0.0f, 0.0f, 10.0f);
 	sr::GameObject go;
 	go.m_Mesh = objl::Loader::Load("assets/Car.obj");
 	go.m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));

@@ -7,14 +7,14 @@ glm::vec3 Normalize(const glm::vec3& vector)
 	return vector * (1.0f / l);
 }
 
-float Interpolate(float y1, float y2, float x)
+float Lerp(float y1, float y2, float x)
 {
 	return y1 + x * ((y2 - y1) / 1.0f);
 }
 
-glm::vec3 Interpolate(const glm::vec3& y1, const glm::vec3& y2, float x)
+glm::vec3 Lerp(const glm::vec3& y1, const glm::vec3& y2, float x)
 {
-	return { Interpolate(y1.x, y2.x, x), Interpolate(y1.y, y2.y, x), Interpolate(y1.z, y2.z, x) };
+	return { Lerp(y1.x, y2.x, x), Lerp(y1.y, y2.y, x), Lerp(y1.z, y2.z, x) };
 }
 
 float Max(float a, float b)
@@ -36,150 +36,149 @@ glm::vec3 Clamp(const glm::vec3& a, const glm::vec3& b)
 	return result;
 }
 
-glm::vec3 IntersectPlane(glm::vec3& planeP, glm::vec3& planeN, glm::vec3& start, glm::vec3& end)
+glm::vec3 IntersectPlane(glm::vec3& planeP, glm::vec3& planeN, glm::vec3& start, glm::vec3& end, float& t)
 {
 	planeN = Normalize(planeN);
-	float plane_d = -glm::dot(planeN, planeP);
+	float planeD = -glm::dot(planeN, planeP);
 	float ad = glm::dot(start, planeN);
 	float bd = glm::dot(end, planeN);
-	float t = (-plane_d - ad) / (bd - ad);
+	t = (-planeD - ad) / (bd - ad);
 	glm::vec3 lineStartToEnd = end - start;
 	glm::vec3 lineToIntersect = lineStartToEnd * t;
 	return start + lineToIntersect;
 }
 
-int Triangle_ClipAgainstPlane(glm::vec3 plane_p, glm::vec3 plane_n, sr::TriangleV& in_tri, sr::TriangleV& out_tri1, sr::TriangleV& out_tri2)
+int TriangleClipAgainstPlane(glm::vec3 planeP, glm::vec3 planeN, sr::TriangleV& inTri, sr::TriangleV& outTri1, sr::TriangleV& outTri2, bool screenSpace)
 {
-	// Make sure plane normal is indeed normal
-	plane_n = Normalize(plane_n);
+	planeN = Normalize(planeN);
 
-	// Return signed shortest distance from point to plane, plane normal must be normalised
 	auto dist = [&](glm::vec3& p)
 	{
 		glm::vec3 n = Normalize(p);
-		return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - glm::dot(plane_n, plane_p));
+		return (planeN.x * p.x + planeN.y * p.y + planeN.z * p.z - glm::dot(planeN, planeP));
 	};
 
-	// Create two temporary storage arrays to classify points either side of plane
-	// If distance sign is positive, point lies on "inside" of plane
-	glm::vec3* inside_points[3];  int nInsidePointCount = 0;
-	glm::vec3* outside_points[3]; int nOutsidePointCount = 0;
+	sr::Vertex* inside_points[3];  int nInsidePointCount = 0;
+	sr::Vertex *outside_points[3]; int nOutsidePointCount = 0;
 
-	// Get signed distance of each point in triangle to plane
-	float d0 = dist(in_tri.vertices[0].m_WorldPos);
-	float d1 = dist(in_tri.vertices[1].m_WorldPos);
-	float d2 = dist(in_tri.vertices[2].m_WorldPos);
+	float d0 = dist(inTri.vertices[0].m_WorldPos);
+	float d1 = dist(inTri.vertices[1].m_WorldPos);
+	float d2 = dist(inTri.vertices[2].m_WorldPos);
 
 	if (d0 >= 0)
 	{
-		inside_points[nInsidePointCount++] = &in_tri.vertices[0].m_WorldPos;
+		inside_points[nInsidePointCount++] = &inTri.vertices[0];
 	}
 	else 
 	{ 
-		outside_points[nOutsidePointCount++] = &in_tri.vertices[0].m_WorldPos;
+		outside_points[nOutsidePointCount++] = &inTri.vertices[0];
 	}
 	if (d1 >= 0)
 	{
-		inside_points[nInsidePointCount++] = &in_tri.vertices[1].m_WorldPos;
+		inside_points[nInsidePointCount++] = &inTri.vertices[1];
 	}
 	else
 	{
-		outside_points[nOutsidePointCount++] = &in_tri.vertices[1].m_WorldPos;
+		outside_points[nOutsidePointCount++] = &inTri.vertices[1];
 	}
 	if (d2 >= 0)
 	{ 
-		inside_points[nInsidePointCount++] = &in_tri.vertices[2].m_WorldPos;
+		inside_points[nInsidePointCount++] = &inTri.vertices[2];
 	}
 	else
 	{ 
-		outside_points[nOutsidePointCount++] = &in_tri.vertices[2].m_WorldPos;
+		outside_points[nOutsidePointCount++] = &inTri.vertices[2];
 	}
-
-	// Now classify triangle points, and break the input triangle into 
-	// smaller output triangles if required. There are four possible
-	// outcomes...
 
 	if (nInsidePointCount == 0)
 	{
-		// All points lie on the outside of plane, so clip whole triangle
-		// It ceases to exist
-
-		return 0; // No returned triangles are valid
+		return 0;
 	}
 
 	if (nInsidePointCount == 3)
 	{
-		// All points lie on the inside of plane, so do nothing
-		// and allow the triangle to simply pass through
-		out_tri1 = in_tri;
-
-		return 1; // Just the one returned original triangle is valid
+		outTri1 = inTri;
+		return 1;
 	}
 
 	if (nInsidePointCount == 1 && nOutsidePointCount == 2)
 	{
-		// Triangle should be clipped. As two points lie outside
-		// the plane, the triangle simply becomes a smaller triangle
+		float t1, t2;
+		outTri1.vertices[1].m_WorldPos = IntersectPlane(planeP, planeN, inside_points[0]->m_WorldPos, outside_points[0]->m_WorldPos, t1);
+		outTri1.vertices[2].m_WorldPos = IntersectPlane(planeP, planeN, inside_points[0]->m_WorldPos, outside_points[1]->m_WorldPos, t2);
+		if (screenSpace)
+		{
+			outTri1.vertices[1].m_Normal = inTri.vertices[1].m_Normal;
+			outTri1.vertices[2].m_Normal = inTri.vertices[2].m_Normal;
+			outTri1.vertices[1].m_C = inTri.vertices[1].m_C;
+			outTri1.vertices[2].m_C = inTri.vertices[2].m_C;
 
-		// Copy appearance info to new triangle
-		//out_tri1.col = in_tri.col;
-		//out_tri1.sym = in_tri.sym;
+			outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
+			outTri1.vertices[0].m_Normal = inTri.vertices[0].m_Normal;
+			outTri1.vertices[0].m_C = inTri.vertices[0].m_C;
+		}
+		else
+		{
+			outTri1.vertices[1].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1);
+			outTri1.vertices[2].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[1]->m_Normal, t2);
+			outTri1.vertices[1].m_C = Lerp(inside_points[0]->m_C, outside_points[0]->m_C, t1);
+			outTri1.vertices[2].m_C = Lerp(inside_points[0]->m_C, outside_points[1]->m_C, t2);
 
-		// The inside point is valid, so keep that...
-		out_tri1.vertices[0].m_WorldPos = *inside_points[0];
-		out_tri1.vertices[0].m_Normal = in_tri.vertices[0].m_Normal;
-		out_tri1.vertices[0].m_C = in_tri.vertices[0].m_C;
-		// but the two new points are at the locations where the 
-		// original sides of the triangle (lines) intersect with the plane
-		out_tri1.vertices[1].m_WorldPos = IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0]);
-		out_tri1.vertices[2].m_WorldPos = IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[1]);
-		out_tri1.vertices[1].m_Normal = in_tri.vertices[1].m_Normal;
-		out_tri1.vertices[2].m_Normal = in_tri.vertices[2].m_Normal;
-		out_tri1.vertices[1].m_C = in_tri.vertices[1].m_C;
-		out_tri1.vertices[2].m_C = in_tri.vertices[2].m_C;
+			outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
+			outTri1.vertices[0].m_Normal = inside_points[0]->m_Normal;
+			outTri1.vertices[0].m_C = inside_points[0]->m_C;
+		}
 
-		return 1; // Return the newly formed single triangle
+		return 1;
 	}
-
-	if (nInsidePointCount == 2 && nOutsidePointCount == 1)
+	else if (nInsidePointCount == 2 && nOutsidePointCount == 1)
 	{
-		// Triangle should be clipped. As two points lie inside the plane,
-		// the clipped triangle becomes a "quad". Fortunately, we can
-		// represent a quad with two new triangles
+		float t1, t2;
+		outTri1.vertices[2].m_WorldPos = IntersectPlane(planeP, planeN, inside_points[0]->m_WorldPos, outside_points[0]->m_WorldPos, t1);
+		outTri2.vertices[2].m_WorldPos = IntersectPlane(planeP, planeN, inside_points[1]->m_WorldPos, outside_points[0]->m_WorldPos, t2);
+		if (screenSpace)
+		{
+			outTri1.vertices[2].m_Normal = inTri.vertices[2].m_Normal;
+			outTri2.vertices[2].m_Normal = inTri.vertices[2].m_Normal;
+			outTri1.vertices[2].m_C = inTri.vertices[2].m_C;
+			outTri2.vertices[2].m_C = inTri.vertices[2].m_C;
 
-		// Copy appearance info to new triangles
-		//out_tri1.col = in_tri.col;
-		//out_tri1.sym = in_tri.sym;
+			outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
+			outTri1.vertices[1].m_WorldPos = inside_points[1]->m_WorldPos;
+			outTri1.vertices[0].m_Normal = inTri.vertices[0].m_Normal;
+			outTri1.vertices[1].m_Normal = inTri.vertices[1].m_Normal;
+			outTri1.vertices[0].m_C = inTri.vertices[0].m_C;
+			outTri1.vertices[1].m_C = inTri.vertices[1].m_C;
 
-		//out_tri2.col = in_tri.col;
-		//out_tri2.sym = in_tri.sym;
+			outTri2.vertices[0].m_WorldPos = inside_points[1]->m_WorldPos;
+			outTri2.vertices[1].m_WorldPos = outTri1.vertices[2].m_WorldPos;
+			outTri2.vertices[0].m_Normal = inTri.vertices[0].m_Normal;
+			outTri2.vertices[1].m_Normal = inTri.vertices[1].m_Normal;
+			outTri2.vertices[0].m_C = inTri.vertices[0].m_C;
+			outTri2.vertices[1].m_C = inTri.vertices[1].m_C;
+		}
+		else
+		{
+			outTri1.vertices[2].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1);
+			outTri2.vertices[2].m_Normal = Lerp(inside_points[1]->m_Normal, outside_points[0]->m_Normal, t2);
+			outTri1.vertices[2].m_C = Lerp(inside_points[0]->m_C, outside_points[0]->m_C, t1);
+			outTri2.vertices[2].m_C = Lerp(inside_points[1]->m_C, outside_points[0]->m_C, t2);
 
-		// The first triangle consists of the two inside points and a new
-		// point determined by the location where one side of the triangle
-		// intersects with the plane
-		out_tri1.vertices[0].m_WorldPos = *inside_points[0];
-		out_tri1.vertices[1].m_WorldPos = *inside_points[1];
-		out_tri1.vertices[2].m_WorldPos = IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0]);
-		out_tri1.vertices[0].m_Normal = in_tri.vertices[0].m_Normal;
-		out_tri1.vertices[1].m_Normal = in_tri.vertices[1].m_Normal;
-		out_tri1.vertices[2].m_Normal = in_tri.vertices[2].m_Normal;
-		out_tri1.vertices[0].m_C = in_tri.vertices[0].m_C;
-		out_tri1.vertices[1].m_C = in_tri.vertices[1].m_C;
-		out_tri1.vertices[2].m_C = in_tri.vertices[2].m_C;
+			outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
+			outTri1.vertices[1].m_WorldPos = inside_points[1]->m_WorldPos;
+			outTri1.vertices[0].m_Normal = inside_points[0]->m_Normal;
+			outTri1.vertices[1].m_Normal = inside_points[1]->m_Normal;
+			outTri1.vertices[0].m_C = inside_points[0]->m_C;
+			outTri1.vertices[1].m_C = inside_points[1]->m_C;
 
-		// The second triangle is composed of one of he inside points, a
-		// new point determined by the intersection of the other side of the 
-		// triangle and the plane, and the newly created point above
-		out_tri2.vertices[0].m_WorldPos = *inside_points[1];
-		out_tri2.vertices[1].m_WorldPos = out_tri1.vertices[2].m_WorldPos;
-		out_tri2.vertices[2].m_WorldPos = IntersectPlane(plane_p, plane_n, *inside_points[1], *outside_points[0]);
-		out_tri2.vertices[0].m_Normal = in_tri.vertices[0].m_Normal;
-		out_tri2.vertices[1].m_Normal = in_tri.vertices[1].m_Normal;
-		out_tri2.vertices[2].m_Normal = in_tri.vertices[2].m_Normal;
-		out_tri2.vertices[0].m_C = in_tri.vertices[0].m_C;
-		out_tri2.vertices[1].m_C = in_tri.vertices[1].m_C;
-		out_tri2.vertices[2].m_C = in_tri.vertices[2].m_C;
+			outTri2.vertices[0].m_WorldPos = inside_points[1]->m_WorldPos;
+			outTri2.vertices[1].m_WorldPos = outTri1.vertices[2].m_WorldPos;
+			outTri2.vertices[0].m_Normal = inside_points[1]->m_Normal;
+			outTri2.vertices[1].m_Normal = outTri1.vertices[2].m_Normal;
+			outTri2.vertices[0].m_C = inside_points[1]->m_C;
+			outTri2.vertices[1].m_C = outTri1.vertices[2].m_C;
+		}
 
-		return 2; // Return two newly formed triangles which form a quad
+		return 2;
 	}
 }

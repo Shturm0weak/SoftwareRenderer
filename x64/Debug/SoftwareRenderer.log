@@ -1,12 +1,3 @@
-﻿  SoftwareRenderer.cpp
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(929,18): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1232,18): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1235,30): warning C4244: аргумент: преобразование "float" в "T", возможна потеря данных
-          with
-          [
-              T=glm::i32
-          ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1274,1): warning C4506: нет определения для подставляемой функции "sr::Window &sr::Window::GetInstance(void)"
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1274,1): warning C4506: нет определения для подставляемой функции "sr::Scene &sr::Scene::GetInstance(void)"
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1179): warning C4715: objl::Loader::Load: значение возвращается не при всех путях выполнения
+﻿  Utils.cpp
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Utils.cpp(175): warning C4715: TriangleClipAgainstPlane: значение возвращается не при всех путях выполнения
   SoftwareRenderer.vcxproj -> C:\Users\Alexandr\source\repos\SoftwareRenderer\x64\Debug\SoftwareRenderer.exe
