@@ -108,26 +108,18 @@ int TriangleClipAgainstPlane(glm::vec3 planeP, glm::vec3 planeN, sr::TriangleV& 
 		outTri1.vertices[2].m_WorldPos = IntersectPlane(planeP, planeN, inside_points[0]->m_WorldPos, outside_points[1]->m_WorldPos, t2);
 		if (screenSpace)
 		{
-			outTri1.vertices[1].m_Normal = inTri.vertices[1].m_Normal;
-			outTri1.vertices[2].m_Normal = inTri.vertices[2].m_Normal;
-			outTri1.vertices[1].m_C = inTri.vertices[1].m_C;
-			outTri1.vertices[2].m_C = inTri.vertices[2].m_C;
-
-			outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
-			outTri1.vertices[0].m_Normal = inTri.vertices[0].m_Normal;
-			outTri1.vertices[0].m_C = inTri.vertices[0].m_C;
+			outTri1.vertices[0].m_P = inside_points[0]->m_P;
+			outTri1.vertices[1].m_P = Lerp(inside_points[0]->m_P, outside_points[0]->m_P, t1);
+			outTri1.vertices[2].m_P = Lerp(inside_points[0]->m_P, outside_points[1]->m_P, t2);
 		}
-		else
-		{
-			outTri1.vertices[1].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1);
-			outTri1.vertices[2].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[1]->m_Normal, t2);
-			outTri1.vertices[1].m_C = Lerp(inside_points[0]->m_C, outside_points[0]->m_C, t1);
-			outTri1.vertices[2].m_C = Lerp(inside_points[0]->m_C, outside_points[1]->m_C, t2);
+		outTri1.vertices[1].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1);
+		outTri1.vertices[2].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[1]->m_Normal, t2);
+		outTri1.vertices[1].m_C = Lerp(inside_points[0]->m_C, outside_points[0]->m_C, t1);
+		outTri1.vertices[2].m_C = Lerp(inside_points[0]->m_C, outside_points[1]->m_C, t2);
 
-			outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
-			outTri1.vertices[0].m_Normal = inside_points[0]->m_Normal;
-			outTri1.vertices[0].m_C = inside_points[0]->m_C;
-		}
+		outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
+		outTri1.vertices[0].m_Normal = inside_points[0]->m_Normal;
+		outTri1.vertices[0].m_C = inside_points[0]->m_C;
 
 		return 1;
 	}
@@ -138,46 +130,32 @@ int TriangleClipAgainstPlane(glm::vec3 planeP, glm::vec3 planeN, sr::TriangleV& 
 		outTri2.vertices[2].m_WorldPos = IntersectPlane(planeP, planeN, inside_points[1]->m_WorldPos, outside_points[0]->m_WorldPos, t2);
 		if (screenSpace)
 		{
-			outTri1.vertices[2].m_Normal = inTri.vertices[2].m_Normal;
-			outTri2.vertices[2].m_Normal = inTri.vertices[2].m_Normal;
-			outTri1.vertices[2].m_C = inTri.vertices[2].m_C;
-			outTri2.vertices[2].m_C = inTri.vertices[2].m_C;
+			outTri1.vertices[0].m_P = inside_points[0]->m_P;
+			outTri1.vertices[1].m_P = inside_points[1]->m_P;
+			outTri1.vertices[2].m_P = Lerp(inside_points[0]->m_P, outside_points[0]->m_P, t1);
 
-			outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
-			outTri1.vertices[1].m_WorldPos = inside_points[1]->m_WorldPos;
-			outTri1.vertices[0].m_Normal = inTri.vertices[0].m_Normal;
-			outTri1.vertices[1].m_Normal = inTri.vertices[1].m_Normal;
-			outTri1.vertices[0].m_C = inTri.vertices[0].m_C;
-			outTri1.vertices[1].m_C = inTri.vertices[1].m_C;
-
-			outTri2.vertices[0].m_WorldPos = inside_points[1]->m_WorldPos;
-			outTri2.vertices[1].m_WorldPos = outTri1.vertices[2].m_WorldPos;
-			outTri2.vertices[0].m_Normal = inTri.vertices[0].m_Normal;
-			outTri2.vertices[1].m_Normal = inTri.vertices[1].m_Normal;
-			outTri2.vertices[0].m_C = inTri.vertices[0].m_C;
-			outTri2.vertices[1].m_C = inTri.vertices[1].m_C;
+			outTri2.vertices[0].m_P = inside_points[1]->m_P;
+			outTri2.vertices[1].m_P = outTri1.vertices[2].m_P;
+			outTri2.vertices[2].m_P = Lerp(inside_points[1]->m_P, outside_points[0]->m_P, t2);
 		}
-		else
-		{
-			outTri1.vertices[2].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1);
-			outTri2.vertices[2].m_Normal = Lerp(inside_points[1]->m_Normal, outside_points[0]->m_Normal, t2);
-			outTri1.vertices[2].m_C = Lerp(inside_points[0]->m_C, outside_points[0]->m_C, t1);
-			outTri2.vertices[2].m_C = Lerp(inside_points[1]->m_C, outside_points[0]->m_C, t2);
+		outTri1.vertices[2].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1);
+		outTri2.vertices[2].m_Normal = Lerp(inside_points[1]->m_Normal, outside_points[0]->m_Normal, t2);
+		outTri1.vertices[2].m_C = Lerp(inside_points[0]->m_C, outside_points[0]->m_C, t1);
+		outTri2.vertices[2].m_C = Lerp(inside_points[1]->m_C, outside_points[0]->m_C, t2);
 
-			outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
-			outTri1.vertices[1].m_WorldPos = inside_points[1]->m_WorldPos;
-			outTri1.vertices[0].m_Normal = inside_points[0]->m_Normal;
-			outTri1.vertices[1].m_Normal = inside_points[1]->m_Normal;
-			outTri1.vertices[0].m_C = inside_points[0]->m_C;
-			outTri1.vertices[1].m_C = inside_points[1]->m_C;
+		outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
+		outTri1.vertices[1].m_WorldPos = inside_points[1]->m_WorldPos;
+		outTri1.vertices[0].m_Normal = inside_points[0]->m_Normal;
+		outTri1.vertices[1].m_Normal = inside_points[1]->m_Normal;
+		outTri1.vertices[0].m_C = inside_points[0]->m_C;
+		outTri1.vertices[1].m_C = inside_points[1]->m_C;
 
-			outTri2.vertices[0].m_WorldPos = inside_points[1]->m_WorldPos;
-			outTri2.vertices[1].m_WorldPos = outTri1.vertices[2].m_WorldPos;
-			outTri2.vertices[0].m_Normal = inside_points[1]->m_Normal;
-			outTri2.vertices[1].m_Normal = outTri1.vertices[2].m_Normal;
-			outTri2.vertices[0].m_C = inside_points[1]->m_C;
-			outTri2.vertices[1].m_C = outTri1.vertices[2].m_C;
-		}
+		outTri2.vertices[0].m_WorldPos = inside_points[1]->m_WorldPos;
+		outTri2.vertices[1].m_WorldPos = outTri1.vertices[2].m_WorldPos;
+		outTri2.vertices[0].m_Normal = inside_points[1]->m_Normal;
+		outTri2.vertices[1].m_Normal = outTri1.vertices[2].m_Normal;
+		outTri2.vertices[0].m_C = inside_points[1]->m_C;
+		outTri2.vertices[1].m_C = outTri1.vertices[2].m_C;
 
 		return 2;
 	}

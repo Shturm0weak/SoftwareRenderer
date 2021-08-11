@@ -1,3 +1,12 @@
-﻿  Utils.cpp
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Utils.cpp(175): warning C4715: TriangleClipAgainstPlane: значение возвращается не при всех путях выполнения
+﻿  Scene.cpp
+C:\Users\Alexandr\source\repos\SoftwareRenderer\ThreadPool.h(35,40): warning C4267: return: преобразование из "size_t" в "uint32_t"; возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(137,35): warning C4244: инициализация: преобразование "float" в "uint32_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(138,18): warning C4244: инициализация: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(191,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(196,17): warning C4244: инициализация: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(249,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(278,36): warning C4244: инициализация: преобразование "float" в "uint32_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(279,19): warning C4244: инициализация: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(293,18): warning C4244: инициализация: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(319,1): warning C4506: нет определения для подставляемой функции "sr::Window &sr::Window::GetInstance(void)"
   SoftwareRenderer.vcxproj -> C:\Users\Alexandr\source\repos\SoftwareRenderer\x64\Debug\SoftwareRenderer.exe

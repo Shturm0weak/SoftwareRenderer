@@ -185,6 +185,12 @@ void sr::Window::Resize(glm::ivec2 size)
     //sr::Scene::GetInstance().camera.RecalculateProjectionMatrix(); due to call this in Camera::Move() every frame
 }
 
+void sr::Window::SetTitle(const std::wstring& title)
+{
+    s_Title = title;
+    SetWindowTextW(s_HWnd, s_Title.c_str());
+}
+
 void sr::Window::Update()
 {
     HDC DeviceContext = GetDC(s_HWnd);
@@ -204,12 +210,40 @@ void sr::Window::Update()
 
 void sr::Window::Clear(glm::ivec3 color)
 {
-    for (size_t i = 0; i < s_BitMapSize.x; i++)
+    size_t numThreads = ThreadPool::GetInstance().GetAmountOfThreads();
+    float dif = (float)s_BitMapSize.x / (float)numThreads;
+    for (size_t k = 0; k < numThreads - 1; k++)
     {
-        for (size_t j = 0; j < s_BitMapSize.y; j++)
-        {
-            Renderer::FillPixel(glm::ivec2(i, j), color);
-            s_DepthBuffer[j * s_BitMapSize.x + i] = 1.0f;
-        }
+        s_SyncParams.s_Ready[k] = false;
+        ThreadPool::GetInstance().Enqueue([=] {
+            uint32_t thisSegmentOfObjectsV = k * dif + dif;
+            for (size_t i = k * dif; i < thisSegmentOfObjectsV; i++)
+            {
+                for (size_t j = 0; j < s_BitMapSize.y; j++)
+                {
+                    Renderer::FillPixel(glm::ivec2(i, j), color);
+                    s_DepthBuffer[j * s_BitMapSize.x + i] = 1.0f;
+                }
+            }
+            {
+                s_SyncParams.ThreadFinished(k);
+            }
+        });
     }
+    s_SyncParams.s_Ready[numThreads - 1] = false;
+    ThreadPool::GetInstance().Enqueue([=] {
+        for (size_t i = (numThreads - 1) * dif; i < s_BitMapSize.x; i++)
+        {
+            for (size_t j = 0; j < s_BitMapSize.y; j++)
+            {
+                Renderer::FillPixel(glm::ivec2(i, j), color);
+                s_DepthBuffer[j * s_BitMapSize.x + i] = 1.0f;
+            }
+        }
+        {
+            s_SyncParams.ThreadFinished(numThreads - 1);
+        }
+    });
+
+    s_SyncParams.WaitForAllThreads();
 }

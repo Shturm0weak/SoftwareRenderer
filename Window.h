@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Windows.h>
+#include <condition_variable>
 
 namespace sr
 {
@@ -18,8 +19,9 @@ namespace sr
 		void Init(std::wstring title, glm::ivec2 size);
 		inline static Window& GetInstance();
 
-		void Resize(glm::ivec2 size);
+		void SetTitle(const std::wstring& title);
 		void Update();
+		void Resize(glm::ivec2 size);
 		void Clear(glm::ivec3 color);
 		bool ProcessMessages();
 	public:
@@ -40,7 +42,10 @@ namespace sr
 		float* s_DepthBuffer = nullptr;
 		void* s_BitMapMemory = nullptr;
 
+		SyncParams s_SyncParams;
+
 		friend class Renderer;
+		friend class Scene;
 	};
 
 }

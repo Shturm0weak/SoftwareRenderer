@@ -14,8 +14,10 @@ inline sr::Scene& sr::Scene::GetInstance()
     return scene;
 }
 
-void sr::Scene::DrawTriangle(const GameObject& go, const Triangle& triangle, const Window& window)
+void sr::Scene::DrawTriangle(const GameObject& go, const Triangle& triangle)
 {
+	Window& window = Window::GetInstance();
+
 	glm::vec3 points[3];
 	points[0] = go.m_Mesh->m_Vertices[triangle.m_Indices[0]];
 	points[1] = go.m_Mesh->m_Vertices[triangle.m_Indices[1]];
@@ -69,7 +71,7 @@ void sr::Scene::DrawTriangle(const GameObject& go, const Triangle& triangle, con
 		int clippedTriangles = 0;
 		TriangleV clipped[2];
 		clippedTriangles = TriangleClipAgainstPlane(
-			(s_Camera.m_Forward * 0.7f) + s_Camera.m_Position,
+			(s_Camera.m_Forward * 1.0f) + s_Camera.m_Position,
 			s_Camera.m_Forward,
 			triangleToClip,
 			clipped[0],
@@ -115,75 +117,215 @@ void sr::Scene::DrawTriangle(const GameObject& go, const Triangle& triangle, con
 			clipped[n].vertices[1].m_P = p[1];
 			clipped[n].vertices[2].m_P = p[2];
 
-			s_TrianglesToClip.push_back(clipped[n]);
+			{
+				std::lock_guard lock(window.s_SyncParams.s_Mtx);
+				s_TrianglesToClip.push_back(clipped[n]);
+			}
 		}
 	}
 }
 
-void sr::Scene::ClipAgainstTheScreen(const Window& window)
+void sr::Scene::ClipAgainstTheScreen()
 {
-	for (TriangleV& triangle : s_TrianglesToClip)
+	Window& window = Window::GetInstance();
+	size_t numThreads = ThreadPool::GetInstance().GetAmountOfThreads();
+	size_t size = s_TrianglesToClip.size();
+	float dif = (float)size / (float)numThreads;
+	for (size_t k = 0; k < numThreads - 1; k++)
 	{
-		TriangleV clipped[2];
-		s_TrianglesToRaster.clear();
-		s_TrianglesToRaster.push_back(triangle);
-		int nNewTriangles = 1;
-
-		for (int p = 0; p < 4; p++)
-		{
-			int nTrisToAdd = 0;
-			while (nNewTriangles > 0)
+		window.s_SyncParams.s_Ready[k] = false;
+		ThreadPool::GetInstance().Enqueue([=] {
+			Window& window = Window::GetInstance();
+			std::list<TriangleV> trianglesToRaster;
+			uint32_t thisSegmentOfObjectsV = k * dif + dif;
+			for (size_t i = k * dif; i < thisSegmentOfObjectsV; i++)
 			{
-				TriangleV temp = s_TrianglesToRaster.front();
-				TriangleV test = s_TrianglesToRaster.front();
-				test.vertices[0].m_WorldPos = test.vertices[0].m_P;
-				test.vertices[1].m_WorldPos = test.vertices[1].m_P;
-				test.vertices[2].m_WorldPos = test.vertices[2].m_P;
-				s_TrianglesToRaster.pop_front();
-				nNewTriangles--;
+				TriangleV triangle = s_TrianglesToClip[i];
+				TriangleV clipped[2];
+				trianglesToRaster.clear();
+				trianglesToRaster.push_back(triangle);
+				int nNewTriangles = 1;
 
-				switch (p)
+				for (int p = 0; p < 4; p++)
 				{
-				case 0:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
-				case 1:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, (float)window.s_Size.y - 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
-				case 2:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
-				case 3:	nTrisToAdd = TriangleClipAgainstPlane({ (float)window.s_Size.x - 1.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+					int nTrisToAdd = 0;
+					while (nNewTriangles > 0)
+					{
+						glm::vec3 tempPos[3];
+						TriangleV test = trianglesToRaster.front();
+						tempPos[0] = test.vertices[0].m_WorldPos;
+						tempPos[1] = test.vertices[1].m_WorldPos;
+						tempPos[2] = test.vertices[2].m_WorldPos;
+						test.vertices[0].m_WorldPos = test.vertices[0].m_P;
+						test.vertices[1].m_WorldPos = test.vertices[1].m_P;
+						test.vertices[2].m_WorldPos = test.vertices[2].m_P;
+						test.vertices[0].m_P = tempPos[0];
+						test.vertices[1].m_P = tempPos[1];
+						test.vertices[2].m_P = tempPos[2];
+						trianglesToRaster.pop_front();
+						nNewTriangles--;
+						switch (p)
+						{
+						case 0:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+						case 1:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, (float)window.s_Size.y - 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+						case 2:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+						case 3:	nTrisToAdd = TriangleClipAgainstPlane({ (float)window.s_Size.x - 1.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+						}
+
+						for (int w = 0; w < nTrisToAdd; w++)
+						{
+							tempPos[0] = clipped[w].vertices[0].m_P;
+							tempPos[1] = clipped[w].vertices[1].m_P;
+							tempPos[2] = clipped[w].vertices[2].m_P;
+							clipped[w].vertices[0].m_P = clipped[w].vertices[0].m_WorldPos;
+							clipped[w].vertices[1].m_P = clipped[w].vertices[1].m_WorldPos;
+							clipped[w].vertices[2].m_P = clipped[w].vertices[2].m_WorldPos;
+							clipped[w].vertices[0].m_WorldPos = tempPos[0];
+							clipped[w].vertices[1].m_WorldPos = tempPos[1];
+							clipped[w].vertices[2].m_WorldPos = tempPos[2];
+							trianglesToRaster.push_back(clipped[w]);
+						}
+					}
+					nNewTriangles = trianglesToRaster.size();
 				}
 
-				for (int w = 0; w < nTrisToAdd; w++)
+				Window& window = Window::GetInstance();
+				if (window.s_DrawBuffer == BUFFER_STATE::WIREFRAME)
 				{
-					clipped[w].vertices[0].m_P = temp.vertices[0].m_P;
-					clipped[w].vertices[1].m_P = temp.vertices[1].m_P;
-					clipped[w].vertices[2].m_P = temp.vertices[2].m_P;
-					clipped[w].vertices[0].m_WorldPos = temp.vertices[0].m_WorldPos;
-					clipped[w].vertices[1].m_WorldPos = temp.vertices[1].m_WorldPos;
-					clipped[w].vertices[2].m_WorldPos = temp.vertices[2].m_WorldPos;
-					s_TrianglesToRaster.push_back(clipped[w]);
+					for (auto& t : trianglesToRaster)
+					{
+						Renderer::DrawTriangle(t.vertices[0], t.vertices[1], t.vertices[2]);
+					}
+				}
+				else
+				{
+					for (auto& t : trianglesToRaster)
+					{
+						Renderer::FillTriangle(t.vertices[0], t.vertices[1], t.vertices[2]);
+					}
 				}
 			}
-			nNewTriangles = s_TrianglesToRaster.size();
-		}
-
-		for (auto& t : s_TrianglesToRaster)
-		{
-			Renderer::FillTriangle(t.vertices[0], t.vertices[1], t.vertices[2]);
-			//Renderer::DrawTriangle(t.vertices[0], t.vertices[1], t.vertices[2]);
-		}
+			{
+				window.s_SyncParams.ThreadFinished(k);
+			}
+		});
 	}
+	window.s_SyncParams.s_Ready[numThreads - 1] = false;
+	ThreadPool::GetInstance().Enqueue([=] {
+		Window& window = Window::GetInstance();
+		std::list<TriangleV> trianglesToRaster;
+		for (size_t i = (numThreads - 1) * dif; i < size; i++)
+		{
+			TriangleV triangle = s_TrianglesToClip[i];
+			TriangleV clipped[2];
+			trianglesToRaster.clear();
+			trianglesToRaster.push_back(triangle);
+			int nNewTriangles = 1;
+
+			for (int p = 0; p < 4; p++)
+			{
+				int nTrisToAdd = 1;
+				while (nNewTriangles > 0)
+				{
+					glm::vec3 tempPos[3];
+					TriangleV test = trianglesToRaster.front();
+					tempPos[0] = test.vertices[0].m_WorldPos;
+					tempPos[1] = test.vertices[1].m_WorldPos;
+					tempPos[2] = test.vertices[2].m_WorldPos;
+					test.vertices[0].m_WorldPos = test.vertices[0].m_P;
+					test.vertices[1].m_WorldPos = test.vertices[1].m_P;
+					test.vertices[2].m_WorldPos = test.vertices[2].m_P;
+					test.vertices[0].m_P = tempPos[0];
+					test.vertices[1].m_P = tempPos[1];
+					test.vertices[2].m_P = tempPos[2];
+					trianglesToRaster.pop_front();
+					nNewTriangles--;
+					switch (p)
+					{
+					case 0:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+					case 1:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, (float)window.s_Size.y - 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+					case 2:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+					case 3:	nTrisToAdd = TriangleClipAgainstPlane({ (float)window.s_Size.x - 1.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+					}
+
+					for (int w = 0; w < nTrisToAdd; w++)
+					{
+						tempPos[0] = clipped[w].vertices[0].m_P;
+						tempPos[1] = clipped[w].vertices[1].m_P;
+						tempPos[2] = clipped[w].vertices[2].m_P;
+						clipped[w].vertices[0].m_P = clipped[w].vertices[0].m_WorldPos;
+						clipped[w].vertices[1].m_P = clipped[w].vertices[1].m_WorldPos;
+						clipped[w].vertices[2].m_P = clipped[w].vertices[2].m_WorldPos;
+						clipped[w].vertices[0].m_WorldPos = tempPos[0];
+						clipped[w].vertices[1].m_WorldPos = tempPos[1];
+						clipped[w].vertices[2].m_WorldPos = tempPos[2];
+						trianglesToRaster.push_back(clipped[w]);
+					}
+				}
+				nNewTriangles = trianglesToRaster.size();
+			}
+
+			if (Window::GetInstance().s_DrawBuffer == BUFFER_STATE::WIREFRAME)
+			{
+				for (auto& t : trianglesToRaster)
+				{
+					Renderer::DrawTriangle(t.vertices[0], t.vertices[1], t.vertices[2]);
+				}
+			}
+			else
+			{
+				for (auto& t : trianglesToRaster)
+				{
+					Renderer::FillTriangle(t.vertices[0], t.vertices[1], t.vertices[2]);
+				}
+			}
+		}
+		{
+			window.s_SyncParams.ThreadFinished(numThreads - 1);
+		}
+	});
+
+	window.s_SyncParams.WaitForAllThreads();
 }
 
 void sr::Scene::DrawGameObjects()
 {
 	Window& window = Window::GetInstance();
 	s_TrianglesToClip.clear();
-	for (GameObject* go : s_GameObjects)
+	size_t numThreads = ThreadPool::GetInstance().GetAmountOfThreads();
+	for (size_t j = 0; j < s_GameObjects.size(); j++)
 	{
-		if (go->m_Mesh == nullptr) continue;
-		for (Triangle& triangle : go->m_Mesh->m_Triangles)
+		if (s_GameObjects[j]->m_Mesh == nullptr) continue;
+		size_t size = s_GameObjects[j]->m_Mesh->m_Triangles.size();
+		float dif = (float)size / (float)numThreads;
+		for (size_t k = 0; k < numThreads - 1; k++)
 		{
-			DrawTriangle(*go, triangle, window);
+			window.s_SyncParams.s_Ready[k] = false;
+			ThreadPool::GetInstance().Enqueue([=] {
+				uint32_t thisSegmentOfObjectsV = k * dif + dif;
+				for (size_t i = k * dif; i < thisSegmentOfObjectsV; i++)
+				{
+					Triangle& triangle = s_GameObjects[j]->m_Mesh->m_Triangles[i];
+					DrawTriangle(*s_GameObjects[j], triangle);
+				}
+				{
+					Window::GetInstance().s_SyncParams.ThreadFinished(k);
+				}
+			});
 		}
-	}
+		window.s_SyncParams.s_Ready[numThreads - 1] = false;
+		ThreadPool::GetInstance().Enqueue([=] {
+			for (size_t i = (numThreads - 1) * dif; i < size; i++)
+			{
+				Triangle& triangle = s_GameObjects[j]->m_Mesh->m_Triangles[i];
+				DrawTriangle(*s_GameObjects[j], triangle);
+			}
+			{
+				Window::GetInstance().s_SyncParams.ThreadFinished(numThreads - 1);
+			}
+		});
 
-	ClipAgainstTheScreen(window);
+		window.s_SyncParams.WaitForAllThreads();
+	}
+	ClipAgainstTheScreen();
 }

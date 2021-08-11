@@ -8,6 +8,7 @@ namespace sr
 		SHADER = 0,
 		AMBIENT = 1,
 		DEPTH = 2,
+		WIREFRAME = 3
 	};
 
 	struct Camera

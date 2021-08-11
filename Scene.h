@@ -2,7 +2,6 @@
 
 namespace sr
 {
-
 	class Window;
 
 	class Scene
@@ -14,24 +13,25 @@ namespace sr
 		Scene& operator=(const Scene&) = delete;
 		~Scene() = default;
 
-		void DrawTriangle(const GameObject& go, const Triangle& triangle, const Window& window);
-		void ClipAgainstTheScreen(const Window& window);
+		void DrawTriangle(const GameObject& go, const Triangle& triangle);
+		void ClipAgainstTheScreen();
 	private:
 
 		std::vector<TriangleV> s_TrianglesToClip;
-		std::list<TriangleV> s_TrianglesToRaster;
 	public:
 
 		std::vector<Mesh*> s_Meshes;
 		std::vector<GameObject*> s_GameObjects;
 		Camera s_Camera;
 		Time s_Time;
-		glm::vec3 s_LightDir = Normalize({ 0.5f, 0.5f, 0.5f });
+		glm::vec3 s_LightDir = Normalize({ 1.0f, 1.0f, 1.0f });
 		Shader* s_BindedShader = nullptr;
 	public:
 
 		inline static Scene& GetInstance();
 		void DrawGameObjects();
+
+		friend class Renderer;
 	};
 
 }

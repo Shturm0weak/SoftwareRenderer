@@ -114,6 +114,9 @@ float* sr::Renderer::GetDepthPixel(glm::ivec2 pos)
 
 void sr::Renderer::DrawFlatLine(Point v1, Point v2)
 {
+	//The dumbest way to get rid of gaps between triangles
+	if (v1.m_P.x < v2.m_P.x) v1.m_P.x--;
+
 	Scene& scene = Scene::GetInstance();
 	Window& window = Window::GetInstance();
 	float d = v2.m_P.x - v1.m_P.x;

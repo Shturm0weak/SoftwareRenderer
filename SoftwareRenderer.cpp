@@ -3,8 +3,11 @@
 #include "Window.h"
 #include "Renderer.h"
 #include "Scene.h"
+#include "ThreadPool.h"
 
 std::unordered_map<int, sr::KeyProps> sr::Input::s_Keys;
+sr::ThreadPool* sr::ThreadPool::s_Instance;
+bool sr::ThreadPool::m_IsInitialized;
 
 namespace objl
 {
@@ -1182,14 +1185,16 @@ namespace objl
 
 int main(void)
 {
+	sr::ThreadPool::Init();
 	sr::Scene& scene = sr::Scene::GetInstance();
 	sr::Window& window = sr::Window::GetInstance();
-	window.Init(L"Software renderer", glm::ivec2(1280, 720));
-	scene.s_Camera.m_Position = glm::vec3(0.0f, 0.0f, 10.0f);
+	std::wstring title = L"Software renderer";
+	window.Init(title, glm::ivec2(480, 270));
+	scene.s_Camera.m_Position = glm::vec3(0.0f, 2.0f, 10.0f);
 	sr::GameObject go;
-	go.m_Mesh = objl::Loader::Load("assets/Car.obj");
+	go.m_Mesh = objl::Loader::Load("assets/Mountains.obj");
 	go.m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-	go.m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+	go.m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
 	sr::Shader shader;
 	shader.m_VertexShader = [](
@@ -1218,7 +1223,7 @@ int main(void)
 
 		glm::vec3 viewDir = Normalize(scene.s_Camera.m_Position - worldPos);
 		glm::vec3 reflectDir = Reflect(-scene.s_LightDir, normal);
-		float specular = 2.0f * glm::pow(Max(glm::dot(viewDir, reflectDir), 0.0f), 32);
+		float specular = 1.0f * glm::pow(Max(glm::dot(viewDir, reflectDir), 0.0f), 32);
 
 		ambient *= (diffuseStrength + specular);
 		ambient = Clamp(ambient, glm::vec3(1.0f));
@@ -1227,6 +1232,7 @@ int main(void)
 	scene.s_BindedShader = &shader;
 
 	float angle = 0.0f;
+	double timeToReDrawFps = 0;
 
 	while (window.s_IsRunning)
 	{
@@ -1245,6 +1251,8 @@ int main(void)
 			else if (window.s_DrawBuffer == sr::BUFFER_STATE::AMBIENT)
 				window.s_DrawBuffer = sr::BUFFER_STATE::DEPTH;
 			else if (window.s_DrawBuffer == sr::BUFFER_STATE::DEPTH)
+				window.s_DrawBuffer = sr::BUFFER_STATE::WIREFRAME;
+			else if (window.s_DrawBuffer == sr::BUFFER_STATE::WIREFRAME)
 				window.s_DrawBuffer = sr::BUFFER_STATE::SHADER;
 		}
 
@@ -1259,8 +1267,15 @@ int main(void)
 			go.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 		}
 
-		printf_s("%f\n", 1.0f / scene.s_Time.m_DeltaTime);
+		timeToReDrawFps += scene.s_Time.m_DeltaTime;
+		if (timeToReDrawFps > 0.5)
+		{
+			window.SetTitle(title + L" " + std::to_wstring(1.0f / scene.s_Time.m_DeltaTime));
+			timeToReDrawFps = 0;
+		}
+		
 		//go.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), scene.s_Time.m_GlobalTime * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+		
 		scene.s_Camera.Move();
 		window.Clear(glm::ivec3(255));
 		scene.DrawGameObjects();
