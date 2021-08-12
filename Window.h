@@ -16,9 +16,10 @@ namespace sr
 		Window& operator=(const Window&) = delete;
 		~Window();
 
-		void Init(std::wstring title, glm::ivec2 size);
+		void Init(std::wstring title = L"Software renderer", glm::ivec2 size = { 800, 600 }, glm::vec2 screenPixelsInBitMapPixels = { 1.0f, 1.0f });
 		inline static Window& GetInstance();
 
+		glm::ivec2 GetSize(HWND hWnd = GetInstance().s_HWnd);
 		void SetTitle(const std::wstring& title);
 		void Update();
 		void Resize(glm::ivec2 size);
@@ -27,7 +28,8 @@ namespace sr
 	public:
 
 		std::wstring s_Title;
-		glm::ivec2 s_Size;
+		glm::vec2 s_ScreenPixelsInBitMapPixels;
+		glm::ivec2 s_BitMapSize;
 		BUFFER_STATE s_DrawBuffer = BUFFER_STATE::SHADER;
 		bool s_IsRunning = true;
 	private:
@@ -38,7 +40,6 @@ namespace sr
 		HINSTANCE s_HInstance;
 		HWND s_HWnd;
 		BITMAPINFO s_BitMapInfo;
-		glm::ivec2 s_BitMapSize;
 		float* s_DepthBuffer = nullptr;
 		void* s_BitMapMemory = nullptr;
 

@@ -1189,10 +1189,10 @@ int main(void)
 	sr::Scene& scene = sr::Scene::GetInstance();
 	sr::Window& window = sr::Window::GetInstance();
 	std::wstring title = L"Software renderer";
-	window.Init(title, glm::ivec2(480, 270));
-	scene.s_Camera.m_Position = glm::vec3(0.0f, 2.0f, 10.0f);
+	window.Init(title, glm::ivec2(1024, 960), glm::vec2(4.0f));
+	scene.s_Camera.m_Position = glm::vec3(0.0f, 15.0f, 10.0f);
 	sr::GameObject go;
-	go.m_Mesh = objl::Loader::Load("assets/Mountains.obj");
+	go.m_Mesh = objl::Loader::Load("assets/Sphere.obj");
 	go.m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
 	go.m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
@@ -1215,19 +1215,17 @@ int main(void)
 	{
 		sr::Scene& scene = sr::Scene::GetInstance();
 		sr::Window& window = sr::Window::GetInstance();
-		glm::vec3 ambient = { color.x / 255.0f, color.y / 255.0f, color.z / 255.0f };
-		//scene.m_LightDir = glm::vec3(glm::cos(scene.m_Time.m_GlobalTime),
-			//glm::sin(scene.m_Time.m_GlobalTime), glm::cos(scene.m_Time.m_GlobalTime));
+		float colorFraction = 0.004f;
+		glm::vec3 ambient = glm::vec3(color) * colorFraction;
 		scene.s_LightDir = Normalize(scene.s_LightDir);
 		float diffuseStrength = 1.0f * Max(glm::dot(normal, scene.s_LightDir), 0.0f);
 
 		glm::vec3 viewDir = Normalize(scene.s_Camera.m_Position - worldPos);
 		glm::vec3 reflectDir = Reflect(-scene.s_LightDir, normal);
-		float specular = 1.0f * glm::pow(Max(glm::dot(viewDir, reflectDir), 0.0f), 32);
+		float specular = 0.2f * glm::pow(Max(glm::dot(viewDir, reflectDir), 0.0f), 32);
 
 		ambient *= (diffuseStrength + specular);
-		ambient = Clamp(ambient, glm::vec3(1.0f));
-		return glm::ivec3(ambient * 255.0f);
+		return glm::ivec3(Clamp(ambient) * 255.0f);
 	};
 	scene.s_BindedShader = &shader;
 
@@ -1256,6 +1254,21 @@ int main(void)
 				window.s_DrawBuffer = sr::BUFFER_STATE::SHADER;
 		}
 
+		if (sr::Input::IsKeyDown(0x45))
+		{
+			window.s_ScreenPixelsInBitMapPixels += scene.s_Time.m_DeltaTime;
+			window.s_ScreenPixelsInBitMapPixels = Clamp(window.s_ScreenPixelsInBitMapPixels, glm::vec2(1.0f), glm::vec2(50.0f));
+			window.Resize(window.GetSize());
+			std::cout << window.s_ScreenPixelsInBitMapPixels.x << std::endl;
+		}
+		else if (sr::Input::IsKeyDown(0x51))
+		{
+			window.s_ScreenPixelsInBitMapPixels -= scene.s_Time.m_DeltaTime;
+			window.s_ScreenPixelsInBitMapPixels = Clamp(window.s_ScreenPixelsInBitMapPixels, glm::vec2(1.0f), glm::vec2(50.0f));
+			window.Resize(window.GetSize());
+			std::cout << window.s_ScreenPixelsInBitMapPixels.x << std::endl;
+		}
+
 		if (sr::Input::IsKeyDown(0x4C))
 		{
 			angle += scene.s_Time.m_DeltaTime;
@@ -1268,7 +1281,7 @@ int main(void)
 		}
 
 		timeToReDrawFps += scene.s_Time.m_DeltaTime;
-		if (timeToReDrawFps > 0.5)
+		if (timeToReDrawFps > 0.0)
 		{
 			window.SetTitle(title + L" " + std::to_wstring(1.0f / scene.s_Time.m_DeltaTime));
 			timeToReDrawFps = 0;

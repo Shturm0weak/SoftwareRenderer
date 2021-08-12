@@ -75,10 +75,8 @@ LRESULT CALLBACK sr::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             }
         case WM_SIZE:
             {
-                RECT rect;
-                GetClientRect(hWnd, &rect);
-                glm::ivec2 size = { rect.right - rect.left, rect.bottom - rect.top };
-                sr::Window::GetInstance().Resize(size);
+                Window& window = sr::Window::GetInstance();
+                window.Resize(window.GetSize(hWnd));
             }
             break;
         default:
@@ -89,12 +87,11 @@ LRESULT CALLBACK sr::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     }
 }
 
-void sr::Window::Init(std::wstring title, glm::ivec2 size)
+void sr::Window::Init(std::wstring title, glm::ivec2 size, glm::vec2 screenPixelsInBitMapPixels)
 {
     s_Title = title;
-    s_Size = size;
     s_HInstance = GetModuleHandle(nullptr);
-
+    s_ScreenPixelsInBitMapPixels = screenPixelsInBitMapPixels;
     const wchar_t* className = L"WINDOWCLASS";
 
     WNDCLASS wndClass = {};
@@ -154,10 +151,17 @@ bool sr::Window::ProcessMessages()
     return true;
 }
 
-sr::Window& sr::Window::GetInstance()
+inline sr::Window& sr::Window::GetInstance()
 {
     static Window window;
     return window;
+}
+
+glm::ivec2 sr::Window::GetSize(HWND hWnd)
+{
+    RECT rect;
+    GetClientRect(hWnd, &rect);
+    return { rect.right - rect.left, rect.bottom - rect.top };
 }
 
 void sr::Window::Resize(glm::ivec2 size)
@@ -168,12 +172,11 @@ void sr::Window::Resize(glm::ivec2 size)
         delete[] s_DepthBuffer;
     }
 
-    s_Size = size;
-    s_BitMapSize = size;
+    s_BitMapSize = (glm::vec2)size / s_ScreenPixelsInBitMapPixels;
 
     s_BitMapInfo.bmiHeader.biSize = sizeof(s_BitMapInfo.bmiHeader);
-    s_BitMapInfo.bmiHeader.biWidth = size.x;
-    s_BitMapInfo.bmiHeader.biHeight = size.y;
+    s_BitMapInfo.bmiHeader.biWidth = s_BitMapSize.x;
+    s_BitMapInfo.bmiHeader.biHeight = s_BitMapSize.y;
     s_BitMapInfo.bmiHeader.biPlanes = 1;
     s_BitMapInfo.bmiHeader.biBitCount = 32;
     s_BitMapInfo.bmiHeader.biCompression = BI_RGB;
@@ -198,9 +201,11 @@ void sr::Window::Update()
     GetClientRect(s_HWnd, &rect);
     int windowWidth = rect.right - rect.left;
     int windowHeight = rect.bottom - rect.top;
-    StretchDIBits(DeviceContext,
-        0, 0, s_BitMapSize.x, s_BitMapSize.y,
+    //SetStretchBltMode(DeviceContext, BLACKONWHITE);
+    StretchDIBits(
+        DeviceContext,
         0, 0, windowWidth, windowHeight,
+        0, 0, s_BitMapSize.x, s_BitMapSize.y,
         s_BitMapMemory,
         &s_BitMapInfo,
         DIB_RGB_COLORS, SRCCOPY

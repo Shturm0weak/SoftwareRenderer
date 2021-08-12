@@ -7,7 +7,7 @@
 void sr::Camera::RecalculateProjectionMatrix()
 {
     Window& window = Window::GetInstance();
-    m_Ratio = (float)window.s_Size.x / (float)window.s_Size.y;
+    m_Ratio = (float)window.s_BitMapSize.x / (float)window.s_BitMapSize.y;
     glm::mat4 rot = glm::rotate(glm::mat4(1.0f), m_Roll, glm::vec3(0, 0, 1))
         * glm::rotate(glm::mat4(1.0f), m_Yaw, glm::vec3(0, 1, 0))
         * glm::rotate(glm::mat4(1.0f), m_Pitch, glm::vec3(1, 0, 0));

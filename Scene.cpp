@@ -90,11 +90,7 @@ void sr::Scene::DrawTriangle(const GameObject& go, const Triangle& triangle)
 					clipped[n].vertices[i].m_Normal);
 
 				p[i] = fragPos;
-				float w = fragPos.w;
-				if (w != 0.0f)
-				{
-					p[i] *= 1.0f / w;
-				}
+				p[i] *= 1.0 / fragPos.w;
 			}
 
 			p[0].x += 1.0f;
@@ -105,13 +101,13 @@ void sr::Scene::DrawTriangle(const GameObject& go, const Triangle& triangle)
 			p[1].y += 1.0f;
 			p[2].y += 1.0f;
 
-			p[0].x *= 0.5f * window.s_Size.x;
-			p[1].x *= 0.5f * window.s_Size.x;
-			p[2].x *= 0.5f * window.s_Size.x;
+			p[0].x *= 0.5f * window.s_BitMapSize.x;
+			p[1].x *= 0.5f * window.s_BitMapSize.x;
+			p[2].x *= 0.5f * window.s_BitMapSize.x;
 
-			p[0].y *= 0.5f * window.s_Size.y;
-			p[1].y *= 0.5f * window.s_Size.y;
-			p[2].y *= 0.5f * window.s_Size.y;
+			p[0].y *= 0.5f * window.s_BitMapSize.y;
+			p[1].y *= 0.5f * window.s_BitMapSize.y;
+			p[2].y *= 0.5f * window.s_BitMapSize.y;
 
 			clipped[n].vertices[0].m_P = p[0];
 			clipped[n].vertices[1].m_P = p[1];
@@ -167,9 +163,9 @@ void sr::Scene::ClipAgainstTheScreen()
 						switch (p)
 						{
 						case 0:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
-						case 1:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, (float)window.s_Size.y - 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+						case 1:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, (float)window.s_BitMapSize.y - 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
 						case 2:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
-						case 3:	nTrisToAdd = TriangleClipAgainstPlane({ (float)window.s_Size.x - 1.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+						case 3:	nTrisToAdd = TriangleClipAgainstPlane({ (float)window.s_BitMapSize.x - 1.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
 						}
 
 						for (int w = 0; w < nTrisToAdd; w++)
@@ -190,16 +186,13 @@ void sr::Scene::ClipAgainstTheScreen()
 				}
 
 				Window& window = Window::GetInstance();
-				if (window.s_DrawBuffer == BUFFER_STATE::WIREFRAME)
+				for (auto& t : trianglesToRaster)
 				{
-					for (auto& t : trianglesToRaster)
+					if (window.s_DrawBuffer == BUFFER_STATE::WIREFRAME)
 					{
 						Renderer::DrawTriangle(t.vertices[0], t.vertices[1], t.vertices[2]);
 					}
-				}
-				else
-				{
-					for (auto& t : trianglesToRaster)
+					else
 					{
 						Renderer::FillTriangle(t.vertices[0], t.vertices[1], t.vertices[2]);
 					}
@@ -243,9 +236,9 @@ void sr::Scene::ClipAgainstTheScreen()
 					switch (p)
 					{
 					case 0:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
-					case 1:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, (float)window.s_Size.y - 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+					case 1:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, (float)window.s_BitMapSize.y - 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
 					case 2:	nTrisToAdd = TriangleClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
-					case 3:	nTrisToAdd = TriangleClipAgainstPlane({ (float)window.s_Size.x - 1.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
+					case 3:	nTrisToAdd = TriangleClipAgainstPlane({ (float)window.s_BitMapSize.x - 1.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1], true); break;
 					}
 
 					for (int w = 0; w < nTrisToAdd; w++)

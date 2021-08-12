@@ -8,10 +8,9 @@ uint8_t* sr::Renderer::GetPixel(glm::ivec2 pos)
 {
     Window& window = Window::GetInstance();
     if (0 <= pos.x && pos.x < window.s_BitMapSize.x && 0 <= pos.y && pos.y < window.s_BitMapSize.y)
-    {
-        uint8_t* bitMapMemory = (uint8_t*)window.s_BitMapMemory;
+	{
         int position = (pos.x + pos.y * window.s_BitMapSize.x) * 4;
-        return &bitMapMemory[position];
+        return &((uint8_t*)window.s_BitMapMemory)[position];
     }
     return nullptr;
 }
@@ -115,6 +114,7 @@ float* sr::Renderer::GetDepthPixel(glm::ivec2 pos)
 void sr::Renderer::DrawFlatLine(Point v1, Point v2)
 {
 	//The dumbest way to get rid of gaps between triangles
+	//Disabling can fix some flickering on edges
 	if (v1.m_P.x < v2.m_P.x) v1.m_P.x--;
 
 	Scene& scene = Scene::GetInstance();
@@ -140,6 +140,9 @@ void sr::Renderer::DrawFlatLine(Point v1, Point v2)
 		glm::vec3 worldPos = Lerp(v2.m_WorldPos, v1.m_WorldPos, scale[0]);
 		glm::vec3 normal = Lerp(v2.m_Normal, v1.m_Normal, scale[0]);
 
+		//Enabling can fix some flickering pixels due to synchronous writing to the depth buffer, but performance is much worse
+		//std::lock_guard lock(window.s_SyncParams.s_Mtx);
+		
 		float* depthPixel = GetDepthPixel(fragPos);
 		if (depthPixel != nullptr)
 		{
@@ -162,7 +165,7 @@ void sr::Renderer::DrawFlatLine(Point v1, Point v2)
 					break;
 					case BUFFER_STATE::DEPTH:
 					{
-						FillPixel(fragPos, glm::ivec3((1.0f - glm::abs(z)) * 255.0f));
+						FillPixel(fragPos, glm::ivec3((1.0f - sqrtf(glm::abs(z))) * 255.0f));
 					}
 					break;
 				}	

@@ -1,30 +1,14 @@
-﻿  Renderer.cpp
+﻿  SoftwareRenderer.cpp
 C:\Users\Alexandr\source\repos\SoftwareRenderer\ThreadPool.h(50,40): warning C4267: return: преобразование из "size_t" в "uint32_t"; возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(31,15): warning C4244: инициализация: преобразование "genFIType" в "int", возможна потеря данных
-          with
-          [
-              genFIType=float
-          ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(122,10): warning C4244: инициализация: преобразование "T" в "float", возможна потеря данных
-          with
-          [
-              T=glm::i32
-          ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(123,12): warning C4244: инициализация: преобразование "genFIType" в "int", возможна потеря данных
-          with
-          [
-              genFIType=float
-          ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(165,58): warning C4244: аргумент: преобразование "float" в "T", возможна потеря данных
-          with
-          [
-              T=glm::i32
-          ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(276,1): warning C4506: нет определения для подставляемой функции "sr::Window &sr::Window::GetInstance(void)"
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(276,1): warning C4506: нет определения для подставляемой функции "sr::Scene &sr::Scene::GetInstance(void)"
+C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(932,18): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1225,18): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1274,37): warning C4244: +=: преобразование "double" в "float", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1279,37): warning C4244: -=: преобразование "double" в "float", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1305,1): warning C4506: нет определения для подставляемой функции "sr::Window &sr::Window::GetInstance(void)"
+C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1305,1): warning C4506: нет определения для подставляемой функции "sr::Scene &sr::Scene::GetInstance(void)"
   Создание кода
-  0 of 1811 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+  4 of 1820 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    8 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   SoftwareRenderer.vcxproj -> C:\Users\Alexandr\source\repos\SoftwareRenderer\x64\Release\SoftwareRenderer.exe
