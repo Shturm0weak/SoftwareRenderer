@@ -1,12 +1,13 @@
 Software renderer.
 I decided to make it in terms of fun and education.
 Now this project has:
- * Rendering 3D meshes
+ * Rendering OBJ models
  * Reading user input
  * Phong lighting
  * Depth buffer
  * Clipping
  * Smooth shading
+ * Texturing
  * "Interface" to write fragment and vertex shaders
  * Multithreading rendering
  * No external libraries
