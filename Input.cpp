@@ -59,9 +59,9 @@ bool sr::Input::IsKeyReleased(int keycode)
 
 void sr::Input::ResetInput()
 {
-    for (auto key = s_Keys.begin(); key != s_Keys.end(); key++)
+    for (auto keyIter = s_Keys.begin(); keyIter != s_Keys.end(); keyIter++)
     {
-        key->second.m_Action = (int)INPUT_STATE::NONE;
+        keyIter->second.m_Action = (int)INPUT_STATE::NONE;
     }
 }
 

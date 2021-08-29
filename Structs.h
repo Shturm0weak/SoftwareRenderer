@@ -41,12 +41,25 @@ namespace sr
 		glm::ivec3 m_C[3]; //color
 	};
 
+	struct Texture
+	{
+		std::string m_FilePath;
+		glm::ivec2 m_Size = { 0, 0 };
+		unsigned char* m_LocalBuffer = nullptr;
+		int m_BPP = 0;
+		static Texture* Load(const std::string& filePath);
+		glm::vec3 Sample(glm::vec2 uv);
+		~Texture() { delete[] m_LocalBuffer; }
+	};
+
 	struct Vertex
 	{
 		glm::vec3 m_P; //position in screen space
 		glm::vec3 m_WorldPos; //interpolated position in world space
 		glm::vec3 m_Normal; //interpolated transformed normal
 		glm::ivec3 m_C; //color
+		glm::vec2 m_UV; //interpolated uv coordinates
+		Texture* m_Texture;
 	};
 
 	struct Point
@@ -56,11 +69,15 @@ namespace sr
 		glm::ivec3 m_C; //color
 		glm::ivec2 m_P; //position in screen space
 		float m_Z; //interpolated z component for a depth buffer
+		glm::vec2 m_UV; //interpolated uv coordinates
+		Texture* m_Texture;
 
 		Point(const glm::ivec2& p = glm::ivec2(0),
 			const glm::ivec3& c = glm::ivec3(255, 255, 255),
 			const glm::vec3& fragPos = glm::vec3(0.0f),
 			const glm::vec3& normal = glm::vec3(0.0f),
+			const glm::vec2& uv = glm::vec2(0.0f),
+			Texture* texture = nullptr,
 			float z = 0.0f)
 		{
 			m_P = p;
@@ -68,12 +85,18 @@ namespace sr
 			m_Z = z;
 			m_WorldPos = fragPos;
 			m_Normal = normal;
+			m_UV = uv;
+			m_Texture = texture;
 		}
 
 		Point(const Vertex& vertex)
 		{
 			m_P = vertex.m_P;
 			m_C = vertex.m_C;
+			m_WorldPos = vertex.m_WorldPos;
+			m_Normal = vertex.m_Normal;
+			m_UV = vertex.m_UV;
+			m_Texture = vertex.m_Texture;
 		}
 	};
 
@@ -87,6 +110,7 @@ namespace sr
 		std::vector<Triangle> m_Triangles;
 		std::vector<glm::vec3> m_Vertices;
 		std::vector<glm::vec3> m_Normals;
+		std::vector<glm::vec2> m_UV;
 		glm::ivec3 m_Color = { 255, 255, 255 };
 	};
 
@@ -108,14 +132,14 @@ namespace sr
 	{
 		Transform m_Transform;
 		Mesh* m_Mesh = nullptr;
-
-		GameObject();
+		Texture* m_Texture = nullptr;
+		static GameObject* Create();
 	};
 
 	struct Shader
 	{
 		std::function<glm::vec4 (const Transform&, const glm::mat4&, const glm::vec4&, const glm::vec3&, const glm::vec3&)> m_VertexShader;
-		std::function<glm::ivec3 (const glm::vec3&, const glm::ivec2&, const glm::vec3&, const glm::ivec3&)> m_FragmentShader;
+		std::function<glm::ivec3 (const glm::vec3&, const glm::ivec2&, const glm::vec3&, const glm::ivec3&, const glm::vec2&, Texture*)> m_FragmentShader;
 	};
 
 	enum class INPUT_STATE

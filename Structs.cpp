@@ -3,11 +3,19 @@
 #include "Input.h"
 #include "Window.h"
 #include "Scene.h"
+#include "stb_image.h"
+
+sr::GameObject* sr::GameObject::Create()
+{
+    GameObject* go = new GameObject();
+    Scene::GetInstance().m_GameObjects.push_back(go);
+    return go;
+}
 
 void sr::Camera::RecalculateProjectionMatrix()
 {
     Window& window = Window::GetInstance();
-    m_Ratio = (float)window.s_BitMapSize.x / (float)window.s_BitMapSize.y;
+    m_Ratio = (float)window.m_BitMapSize.x / (float)window.m_BitMapSize.y;
     glm::mat4 rot = glm::rotate(glm::mat4(1.0f), m_Roll, glm::vec3(0, 0, 1))
         * glm::rotate(glm::mat4(1.0f), m_Yaw, glm::vec3(0, 1, 0))
         * glm::rotate(glm::mat4(1.0f), m_Pitch, glm::vec3(1, 0, 0));
@@ -34,7 +42,7 @@ void sr::Camera::Move()
     Clamp();
     float speed = 5.0f;
     float rotationSpeed = 1.0f;
-    float delta = Scene::GetInstance().s_Time.m_DeltaTime;
+    float delta = Scene::GetInstance().m_Time.m_DeltaTime;
     if (Input::IsKeyDown(0x57))
     {
         m_Position += glm::vec3(-m_Back.x, m_Back.y, -m_Back.z) * delta * speed;
@@ -84,4 +92,28 @@ void sr::Camera::Clamp()
         m_Yaw = 0;
     if (m_Pitch > glm::two_pi<float>() || m_Pitch < -glm::two_pi<float>())
         m_Pitch = 0;
+}
+
+sr::Texture* sr::Texture::Load(const std::string& filePath)
+{
+    Texture* texture = new Texture;
+    texture->m_FilePath = filePath;
+    stbi_set_flip_vertically_on_load(true);
+    texture->m_LocalBuffer = stbi_load(filePath.c_str(), &texture->m_Size.x, &texture->m_Size.y, &texture->m_BPP, 0);
+    if (texture->m_LocalBuffer == nullptr)
+    {
+        delete texture;
+        std::cout << "Loading of <" << filePath << "> texture has failed\n";
+        return nullptr;
+    }
+    return texture;
+}
+
+glm::vec3 sr::Texture::Sample(glm::vec2 uv)
+{
+    glm::ivec2 pos = uv * glm::vec2(m_Size - 1);
+    uint8_t* texel;
+    int position = (pos.x + pos.y * m_Size.x) * m_BPP;
+    texel = &((uint8_t*)m_LocalBuffer)[position];
+    return { texel[0], texel[1], texel[2] };
 }

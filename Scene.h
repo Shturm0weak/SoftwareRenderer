@@ -17,19 +17,21 @@ namespace sr
 		void ClipAgainstTheScreen();
 	private:
 
-		std::vector<TriangleV> s_TrianglesToClip;
+		std::vector<TriangleV> m_TrianglesToClip;
 	public:
 
-		std::vector<Mesh*> s_Meshes;
-		std::vector<GameObject*> s_GameObjects;
-		Camera s_Camera;
-		Time s_Time;
-		glm::vec3 s_LightDir = Normalize({ 1.0f, 1.0f, 1.0f });
-		Shader* s_BindedShader = nullptr;
+		std::vector<Texture*> m_Textures;
+		std::vector<Mesh*> m_Meshes;
+		std::vector<GameObject*> m_GameObjects;
+		Camera m_Camera;
+		Time m_Time;
+		glm::vec3 m_LightDir = Normalize({ 1.0f, 1.0f, 1.0f });
+		Shader* m_BindedShader = nullptr;
 	public:
 
-		inline static Scene& GetInstance();
+		static Scene& GetInstance();
 		void DrawGameObjects();
+		void ShutDown();
 
 		friend class Renderer;
 	};

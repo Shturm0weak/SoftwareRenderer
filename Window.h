@@ -19,7 +19,7 @@ namespace sr
 		void Init(std::wstring title = L"Software renderer", glm::ivec2 size = { 800, 600 }, glm::vec2 screenPixelsInBitMapPixels = { 1.0f, 1.0f });
 		inline static Window& GetInstance();
 
-		glm::ivec2 GetSize(HWND hWnd = GetInstance().s_HWnd);
+		glm::ivec2 GetSize(HWND hWnd = GetInstance().m_HWnd);
 		void SetTitle(const std::wstring& title);
 		void Update();
 		void Resize(glm::ivec2 size);
@@ -27,23 +27,22 @@ namespace sr
 		bool ProcessMessages();
 	public:
 
-		std::wstring s_Title;
-		glm::vec2 s_ScreenPixelsInBitMapPixels;
-		glm::ivec2 s_BitMapSize;
-		BUFFER_STATE s_DrawBuffer = BUFFER_STATE::SHADER;
-		bool s_IsRunning = true;
+		std::wstring m_Title;
+		glm::vec2 m_ScreenPixelsInBitMapPixels;
+		glm::ivec2 m_BitMapSize;
+		BUFFER_STATE m_DrawBuffer = BUFFER_STATE::SHADER;
+		bool m_IsRunning = true;
 	private:
 
 		Window() = default;
 	private:
 
-		HINSTANCE s_HInstance;
-		HWND s_HWnd;
-		BITMAPINFO s_BitMapInfo;
-		float* s_DepthBuffer = nullptr;
-		void* s_BitMapMemory = nullptr;
-
-		SyncParams s_SyncParams;
+		HINSTANCE m_HInstance;
+		HWND m_HWnd;
+		BITMAPINFO m_BitMapInfo;
+		SyncParams m_SyncParams;
+		float* m_DepthBuffer = nullptr;
+		void* m_BitMapMemory = nullptr;
 
 		friend class Renderer;
 		friend class Scene;

@@ -89,14 +89,14 @@ LRESULT CALLBACK sr::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 void sr::Window::Init(std::wstring title, glm::ivec2 size, glm::vec2 screenPixelsInBitMapPixels)
 {
-    s_Title = title;
-    s_HInstance = GetModuleHandle(nullptr);
-    s_ScreenPixelsInBitMapPixels = screenPixelsInBitMapPixels;
+    m_Title = title;
+    m_HInstance = GetModuleHandle(nullptr);
+    m_ScreenPixelsInBitMapPixels = screenPixelsInBitMapPixels;
     const wchar_t* className = L"WINDOWCLASS";
 
     WNDCLASS wndClass = {};
     wndClass.lpszClassName = className;
-    wndClass.hInstance = s_HInstance;
+    wndClass.hInstance = m_HInstance;
     wndClass.hIcon = LoadIcon(NULL, IDI_WINLOGO);
     wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
     wndClass.style = CS_DBLCLKS;
@@ -113,10 +113,10 @@ void sr::Window::Init(std::wstring title, glm::ivec2 size, glm::vec2 screenPixel
 
     AdjustWindowRect(&rect, style, false);
 
-    s_HWnd = CreateWindowEx(
+    m_HWnd = CreateWindowEx(
         0,
         className,
-        s_Title.c_str(),
+        m_Title.c_str(),
         style,
         rect.left,
         rect.top,
@@ -124,17 +124,17 @@ void sr::Window::Init(std::wstring title, glm::ivec2 size, glm::vec2 screenPixel
         rect.bottom - rect.top,
         NULL,
         NULL,
-        s_HInstance,
+        m_HInstance,
         NULL
     );
 
-    ShowWindow(s_HWnd, SW_SHOW);
+    ShowWindow(m_HWnd, SW_SHOW);
 }
 
 sr::Window::~Window()
 {
     const wchar_t* className = L"WINDOWCLASS";
-    UnregisterClass(className, s_HInstance);
+    UnregisterClass(className, m_HInstance);
 }
 
 bool sr::Window::ProcessMessages()
@@ -166,89 +166,89 @@ glm::ivec2 sr::Window::GetSize(HWND hWnd)
 
 void sr::Window::Resize(glm::ivec2 size)
 {
-    if (s_BitMapMemory)
+    if (m_BitMapMemory)
     {
-        VirtualFree(s_BitMapMemory, 0, MEM_RELEASE);
-        delete[] s_DepthBuffer;
+        VirtualFree(m_BitMapMemory, 0, MEM_RELEASE);
+        delete[] m_DepthBuffer;
     }
 
-    s_BitMapSize = (glm::vec2)size / s_ScreenPixelsInBitMapPixels;
+    m_BitMapSize = (glm::vec2)size / m_ScreenPixelsInBitMapPixels;
 
-    s_BitMapInfo.bmiHeader.biSize = sizeof(s_BitMapInfo.bmiHeader);
-    s_BitMapInfo.bmiHeader.biWidth = s_BitMapSize.x;
-    s_BitMapInfo.bmiHeader.biHeight = s_BitMapSize.y;
-    s_BitMapInfo.bmiHeader.biPlanes = 1;
-    s_BitMapInfo.bmiHeader.biBitCount = 32;
-    s_BitMapInfo.bmiHeader.biCompression = BI_RGB;
+    m_BitMapInfo.bmiHeader.biSize = sizeof(m_BitMapInfo.bmiHeader);
+    m_BitMapInfo.bmiHeader.biWidth = m_BitMapSize.x;
+    m_BitMapInfo.bmiHeader.biHeight = m_BitMapSize.y;
+    m_BitMapInfo.bmiHeader.biPlanes = 1;
+    m_BitMapInfo.bmiHeader.biBitCount = 32;
+    m_BitMapInfo.bmiHeader.biCompression = BI_RGB;
 
-    int m_BitMapMemorySize = (s_BitMapSize.x * s_BitMapSize.y) * 4;
-    s_BitMapMemory = VirtualAlloc(0, m_BitMapMemorySize, MEM_COMMIT, PAGE_READWRITE);
-    s_DepthBuffer = new float[s_BitMapSize.x * s_BitMapSize.y];
+    int m_BitMapMemorySize = (m_BitMapSize.x * m_BitMapSize.y) * 4;
+    m_BitMapMemory = VirtualAlloc(0, m_BitMapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+    m_DepthBuffer = new float[m_BitMapSize.x * m_BitMapSize.y];
 
     //sr::Scene::GetInstance().camera.RecalculateProjectionMatrix(); due to call this in Camera::Move() every frame
 }
 
 void sr::Window::SetTitle(const std::wstring& title)
 {
-    s_Title = title;
-    SetWindowTextW(s_HWnd, s_Title.c_str());
+    m_Title = title;
+    SetWindowTextW(m_HWnd, m_Title.c_str());
 }
 
 void sr::Window::Update()
 {
-    HDC DeviceContext = GetDC(s_HWnd);
+    HDC DeviceContext = GetDC(m_HWnd);
     RECT rect = {};
-    GetClientRect(s_HWnd, &rect);
+    GetClientRect(m_HWnd, &rect);
     int windowWidth = rect.right - rect.left;
     int windowHeight = rect.bottom - rect.top;
     //SetStretchBltMode(DeviceContext, BLACKONWHITE);
     StretchDIBits(
         DeviceContext,
         0, 0, windowWidth, windowHeight,
-        0, 0, s_BitMapSize.x, s_BitMapSize.y,
-        s_BitMapMemory,
-        &s_BitMapInfo,
+        0, 0, m_BitMapSize.x, m_BitMapSize.y,
+        m_BitMapMemory,
+        &m_BitMapInfo,
         DIB_RGB_COLORS, SRCCOPY
     );
-    ReleaseDC(s_HWnd, DeviceContext);
+    ReleaseDC(m_HWnd, DeviceContext);
 }
 
 void sr::Window::Clear(glm::ivec3 color)
 {
     size_t numThreads = ThreadPool::GetInstance().GetAmountOfThreads();
-    float dif = (float)s_BitMapSize.x / (float)numThreads;
+    float dif = (float)m_BitMapSize.x / (float)numThreads;
     for (size_t k = 0; k < numThreads - 1; k++)
     {
-        s_SyncParams.s_Ready[k] = false;
+        m_SyncParams.s_Ready[k] = false;
         ThreadPool::GetInstance().Enqueue([=] {
             uint32_t thisSegmentOfObjectsV = k * dif + dif;
             for (size_t i = k * dif; i < thisSegmentOfObjectsV; i++)
             {
-                for (size_t j = 0; j < s_BitMapSize.y; j++)
+                for (size_t j = 0; j < m_BitMapSize.y; j++)
                 {
                     Renderer::FillPixel(glm::ivec2(i, j), color);
-                    s_DepthBuffer[j * s_BitMapSize.x + i] = 1.0f;
+                    m_DepthBuffer[j * m_BitMapSize.x + i] = 1.0f;
                 }
             }
             {
-                s_SyncParams.ThreadFinished(k);
+                m_SyncParams.ThreadFinished(k);
             }
         });
     }
-    s_SyncParams.s_Ready[numThreads - 1] = false;
+    m_SyncParams.s_Ready[numThreads - 1] = false;
     ThreadPool::GetInstance().Enqueue([=] {
-        for (size_t i = (numThreads - 1) * dif; i < s_BitMapSize.x; i++)
+        for (size_t i = (numThreads - 1) * dif; i < m_BitMapSize.x; i++)
         {
-            for (size_t j = 0; j < s_BitMapSize.y; j++)
+            for (size_t j = 0; j < m_BitMapSize.y; j++)
             {
                 Renderer::FillPixel(glm::ivec2(i, j), color);
-                s_DepthBuffer[j * s_BitMapSize.x + i] = 1.0f;
+                m_DepthBuffer[j * m_BitMapSize.x + i] = 1.0f;
             }
         }
         {
-            s_SyncParams.ThreadFinished(numThreads - 1);
+            m_SyncParams.ThreadFinished(numThreads - 1);
         }
     });
 
-    s_SyncParams.WaitForAllThreads();
+    m_SyncParams.WaitForAllThreads();
 }

@@ -12,6 +12,11 @@ inline float Lerp(const float& y1, const float& y2, const float& x)
 	return y1 + x * (y2 - y1);
 }
 
+inline glm::vec2 Lerp(const glm::vec2& y1, const glm::vec2& y2, float x)
+{
+	return { Lerp(y1.x, y2.x, x), Lerp(y1.y, y2.y, x) };
+}
+
 inline glm::vec3 Lerp(const glm::vec3& y1, const glm::vec3& y2, float x)
 {
 	return { Lerp(y1.x, y2.x, x), Lerp(y1.y, y2.y, x), Lerp(y1.z, y2.z, x) };
@@ -20,6 +25,11 @@ inline glm::vec3 Lerp(const glm::vec3& y1, const glm::vec3& y2, float x)
 inline glm::vec4 Lerp(const glm::vec4& y1, const glm::vec4& y2, float x)
 {
 	return { Lerp(y1.x, y2.x, x), Lerp(y1.y, y2.y, x), Lerp(y1.z, y2.z, x), Lerp(y1.w, y2.w, x ) };
+}
+
+inline glm::ivec3 Lerp(const glm::ivec3& y1, const glm::ivec3& y2, float x)
+{
+	return { Lerp(y1.x, y2.x, x), Lerp(y1.y, y2.y, x), Lerp(y1.z, y2.z, x) };
 }
 
 float Max(float a, float b)
@@ -134,10 +144,13 @@ int TriangleClipAgainstPlane(glm::vec3 planeP, glm::vec3 planeN, sr::TriangleV& 
 		outTri1.vertices[2].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[1]->m_Normal, t2);
 		outTri1.vertices[1].m_C = Lerp(inside_points[0]->m_C, outside_points[0]->m_C, t1);
 		outTri1.vertices[2].m_C = Lerp(inside_points[0]->m_C, outside_points[1]->m_C, t2);
+		outTri1.vertices[1].m_UV = Lerp(inside_points[0]->m_UV, outside_points[0]->m_UV, t1);
+		outTri1.vertices[2].m_UV = Lerp(inside_points[0]->m_UV, outside_points[1]->m_UV, t2);
 
 		outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
 		outTri1.vertices[0].m_Normal = inside_points[0]->m_Normal;
 		outTri1.vertices[0].m_C = inside_points[0]->m_C;
+		outTri1.vertices[0].m_UV = inside_points[0]->m_UV;
 
 		return 1;
 	}
@@ -160,6 +173,8 @@ int TriangleClipAgainstPlane(glm::vec3 planeP, glm::vec3 planeN, sr::TriangleV& 
 		outTri2.vertices[2].m_Normal = Lerp(inside_points[1]->m_Normal, outside_points[0]->m_Normal, t2);
 		outTri1.vertices[2].m_C = Lerp(inside_points[0]->m_C, outside_points[0]->m_C, t1);
 		outTri2.vertices[2].m_C = Lerp(inside_points[1]->m_C, outside_points[0]->m_C, t2);
+		outTri1.vertices[2].m_UV = Lerp(inside_points[0]->m_UV, outside_points[0]->m_UV, t1);
+		outTri2.vertices[2].m_UV = Lerp(inside_points[1]->m_UV, outside_points[0]->m_UV, t2);
 
 		outTri1.vertices[0].m_WorldPos = inside_points[0]->m_WorldPos;
 		outTri1.vertices[1].m_WorldPos = inside_points[1]->m_WorldPos;
@@ -167,6 +182,8 @@ int TriangleClipAgainstPlane(glm::vec3 planeP, glm::vec3 planeN, sr::TriangleV& 
 		outTri1.vertices[1].m_Normal = inside_points[1]->m_Normal;
 		outTri1.vertices[0].m_C = inside_points[0]->m_C;
 		outTri1.vertices[1].m_C = inside_points[1]->m_C;
+		outTri1.vertices[0].m_UV = inside_points[0]->m_UV;
+		outTri1.vertices[1].m_UV = inside_points[1]->m_UV;
 
 		outTri2.vertices[0].m_WorldPos = inside_points[1]->m_WorldPos;
 		outTri2.vertices[1].m_WorldPos = outTri1.vertices[2].m_WorldPos;
@@ -174,6 +191,8 @@ int TriangleClipAgainstPlane(glm::vec3 planeP, glm::vec3 planeN, sr::TriangleV& 
 		outTri2.vertices[1].m_Normal = outTri1.vertices[2].m_Normal;
 		outTri2.vertices[0].m_C = inside_points[1]->m_C;
 		outTri2.vertices[1].m_C = outTri1.vertices[2].m_C;
+		outTri2.vertices[0].m_UV = inside_points[1]->m_UV;
+		outTri2.vertices[1].m_UV = outTri1.vertices[2].m_UV;
 
 		return 2;
 	}

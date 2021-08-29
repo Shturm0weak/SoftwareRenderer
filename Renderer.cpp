@@ -7,10 +7,10 @@
 uint8_t* sr::Renderer::GetPixel(glm::ivec2 pos)
 {
     Window& window = Window::GetInstance();
-    if (0 <= pos.x && pos.x < window.s_BitMapSize.x && 0 <= pos.y && pos.y < window.s_BitMapSize.y)
+    if (0 <= pos.x && pos.x < window.m_BitMapSize.x && 0 <= pos.y && pos.y < window.m_BitMapSize.y)
 	{
-        int position = (pos.x + pos.y * window.s_BitMapSize.x) * 4;
-        return &((uint8_t*)window.s_BitMapMemory)[position];
+        int position = (pos.x + pos.y * window.m_BitMapSize.x) * 4;
+        return &((uint8_t*)window.m_BitMapMemory)[position];
     }
     return nullptr;
 }
@@ -78,6 +78,8 @@ void sr::Renderer::FillTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 		v4.m_C = scale[0] * glm::vec3(v1.m_C) + scale[1] * glm::vec3(v3.m_C);
 		v4.m_WorldPos = Lerp(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
 		v4.m_Normal = Lerp(v1.m_Normal, v3.m_Normal, scale[1]);
+		v4.m_UV = Lerp(v1.m_UV, v3.m_UV, scale[1]);
+		v4.m_Texture = v2.m_Texture;
 
 		if (v2.m_P.x < v4.m_P.x)
 		{
@@ -103,10 +105,10 @@ void sr::Renderer::DrawTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 float* sr::Renderer::GetDepthPixel(glm::ivec2 pos)
 {
 	Window& window = Window::GetInstance();
-	if (0 <= pos.x && pos.x < window.s_BitMapSize.x && 0 <= pos.y && pos.y < window.s_BitMapSize.y)
+	if (0 <= pos.x && pos.x < window.m_BitMapSize.x && 0 <= pos.y && pos.y < window.m_BitMapSize.y)
 	{
-		int position = (pos.x + pos.y * window.s_BitMapSize.x);
-		return &window.s_DepthBuffer[position];
+		int position = (pos.x + pos.y * window.m_BitMapSize.x);
+		return &window.m_DepthBuffer[position];
 	}
 	return nullptr;
 }
@@ -139,18 +141,20 @@ void sr::Renderer::DrawFlatLine(Point v1, Point v2)
 
 		glm::vec3 worldPos = Lerp(v2.m_WorldPos, v1.m_WorldPos, scale[0]);
 		glm::vec3 normal = Lerp(v2.m_Normal, v1.m_Normal, scale[0]);
-
+		glm::vec2 uv = Lerp(v2.m_UV, v1.m_UV, scale[0]);
 		//Enabling can fix some flickering pixels due to synchronous writing to the depth buffer, but performance is much worse
-		//std::lock_guard lock(window.s_SyncParams.s_Mtx);
+		//std::lock_guard lock(window.m_SyncParams.s_Mtx);
 		
 		float* depthPixel = GetDepthPixel(fragPos);
 		if (depthPixel != nullptr)
 		{
-			float z = 1.0f - (1.0f / Lerp(v2.m_Z, v1.m_Z, scale[0]));
+			float z = Lerp(v2.m_Z, v1.m_Z, scale[0]);
+			uv *= 1.0 / z;
+			z = 1.0f - z;
 			if (z < *depthPixel)
 			{
 				*depthPixel = z;
-				switch (window.s_DrawBuffer)
+				switch (window.m_DrawBuffer)
 				{
 					case BUFFER_STATE::AMBIENT:
 					{
@@ -159,7 +163,7 @@ void sr::Renderer::DrawFlatLine(Point v1, Point v2)
 					break;
 					case BUFFER_STATE::SHADER:
 					{
-						glm::ivec3 fragColor = scene.s_BindedShader->m_FragmentShader(worldPos, fragPos, normal, color);
+						glm::ivec3 fragColor = scene.m_BindedShader->m_FragmentShader(worldPos, fragPos, normal, color, uv, v1.m_Texture);
 						FillPixel(fragPos, fragColor);
 					}
 					break;
@@ -209,6 +213,10 @@ void sr::Renderer::FillTopFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 		normal[0] = Lerp(v1.m_Normal, v3.m_Normal, scale[1]);
 		normal[1] = Lerp(v2.m_Normal, v3.m_Normal, scale[1]);
 
+		glm::vec2 uvs[2];
+		uvs[0] = Lerp(v1.m_UV, v3.m_UV, scale[1]);
+		uvs[1] = Lerp(v2.m_UV, v3.m_UV, scale[1]);
+
 		glm::vec2 px = {
 			invSlope[0] * (float(y) + 0.5f - v1.m_P.y) + v1.m_P.x,
 			invSlope[1] * (float(y) + 0.5f - v2.m_P.y) + v2.m_P.x
@@ -219,8 +227,8 @@ void sr::Renderer::FillTopFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 			(int)ceilf(px[1] - 0.5f)
 		};
 
-		Point p1(glm::ivec2(xPos[0], y), color[0], worldPos[0], normal[0], z[0]);
-		Point p2(glm::ivec2(xPos[1], y), color[1], worldPos[1], normal[1], z[1]);
+		Point p1(glm::ivec2(xPos[0], y), color[0], worldPos[0], normal[0], uvs[0], v1.m_Texture, z[0]);
+		Point p2(glm::ivec2(xPos[1], y), color[1], worldPos[1], normal[1], uvs[1], v2.m_Texture, z[1]);
 
 		DrawFlatLine(p1, p2);
 	}
@@ -260,6 +268,10 @@ void sr::Renderer::FillBottomFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 		normal[0] = Lerp(v1.m_Normal, v2.m_Normal, scale[1]);
 		normal[1] = Lerp(v1.m_Normal, v3.m_Normal, scale[1]);
 
+		glm::vec2 uvs[2];
+		uvs[0] = Lerp(v1.m_UV, v2.m_UV, scale[1]);
+		uvs[1] = Lerp(v1.m_UV, v3.m_UV, scale[1]);
+
 		glm::vec2 px = {
 			invSlope[0] * (float(y) + 0.5f - v1.m_P.y) + v1.m_P.x,
 			invSlope[1] * (float(y) + 0.5f - v1.m_P.y) + v1.m_P.x
@@ -270,8 +282,8 @@ void sr::Renderer::FillBottomFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 			(int)ceilf(px[1] - 0.5f)
 		};
 		
-		Point p1(glm::ivec2(xPos[0], y), color[0], worldPos[0], normal[0], z[0]);
-		Point p2(glm::ivec2(xPos[1], y), color[1], worldPos[1], normal[1], z[1]);
+		Point p1(glm::ivec2(xPos[0], y), color[0], worldPos[0], normal[0], uvs[0], v1.m_Texture, z[0]);
+		Point p2(glm::ivec2(xPos[1], y), color[1], worldPos[1], normal[1], uvs[1], v2.m_Texture, z[1]);
 
 		DrawFlatLine(p1, p2);
 	}

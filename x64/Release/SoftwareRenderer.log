@@ -1,14 +1,10 @@
-﻿  SoftwareRenderer.cpp
+﻿  Structs.cpp
 C:\Users\Alexandr\source\repos\SoftwareRenderer\ThreadPool.h(50,40): warning C4267: return: преобразование из "size_t" в "uint32_t"; возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(932,18): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1225,18): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1274,37): warning C4244: +=: преобразование "double" в "float", возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1279,37): warning C4244: -=: преобразование "double" в "float", возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1305,1): warning C4506: нет определения для подставляемой функции "sr::Window &sr::Window::GetInstance(void)"
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(1305,1): warning C4506: нет определения для подставляемой функции "sr::Scene &sr::Scene::GetInstance(void)"
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Structs.cpp(45,17): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Structs.cpp(120,1): warning C4506: нет определения для подставляемой функции "sr::Window &sr::Window::GetInstance(void)"
   Создание кода
-  4 of 1820 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+  7 of 2046 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    8 functions had inline decision re-evaluated but remain unchanged
+    18 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   SoftwareRenderer.vcxproj -> C:\Users\Alexandr\source\repos\SoftwareRenderer\x64\Release\SoftwareRenderer.exe
