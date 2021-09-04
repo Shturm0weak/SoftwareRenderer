@@ -1,10 +1,23 @@
-﻿  SoftwareRenderer.cpp
-C:\Users\Alexandr\source\repos\SoftwareRenderer\ThreadPool.h(50,40): warning C4267: return: преобразование из "size_t" в "uint32_t"; возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\ObjLoader.h(923,18): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(76,1): warning C4305: аргумент: усечение из "double" в "T"
+﻿  Renderer.cpp
+C:\Users\Alexandr\source\repos\SoftwareRenderer\ThreadPool.h(51,40): warning C4267: return: преобразование из "size_t" в "uint32_t"; возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(30,15): warning C4244: инициализация: преобразование "genFIType" в "int", возможна потеря данных
+          with
+          [
+              genFIType=float
+          ]
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(116,12): warning C4244: инициализация: преобразование "genFIType" в "int", возможна потеря данных
+          with
+          [
+              genFIType=float
+          ]
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(121,13): warning C4244: инициализация: преобразование "T" в "int", возможна потеря данных
           with
           [
               T=float
           ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\SoftwareRenderer.cpp(168,1): warning C4506: нет определения для подставляемой функции "sr::Window &sr::Window::GetInstance(void)"
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(163,65): warning C4244: аргумент: преобразование "float" в "T", возможна потеря данных
+          with
+          [
+              T=glm::i32
+          ]
   SoftwareRenderer.vcxproj -> C:\Users\Alexandr\source\repos\SoftwareRenderer\x64\Debug\SoftwareRenderer.exe

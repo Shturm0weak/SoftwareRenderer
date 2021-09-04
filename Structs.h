@@ -3,12 +3,29 @@
 namespace sr
 {
 
-	enum class BUFFER_STATE
+	enum class BUFFERSTATE
 	{
-		SHADER = 0,
-		AMBIENT = 1,
-		DEPTH = 2,
-		WIREFRAME = 3
+		SHADER,
+		DEPTH,
+		WIREFRAME
+	};
+
+	struct Texture
+	{
+		std::string m_FilePath;
+		glm::ivec2 m_Size = { 0, 0 };
+		unsigned char* m_LocalBuffer = nullptr;
+		int m_BPP = 0;
+		static Texture* Load(const std::string& filePath);
+		glm::vec3 Sample(glm::vec2 uv);
+		~Texture() { delete[] m_LocalBuffer; }
+	};
+
+	struct Material
+	{
+		float m_Specular = 0.1f;
+		float m_Ambient = 0.2f;
+		Texture* m_Texture = nullptr;
 	};
 
 	struct Camera
@@ -35,79 +52,30 @@ namespace sr
 		void Clamp();
 	};
 
-	struct Triangle
+	struct TriangleInfo
 	{
 		glm::uvec3 m_Indices;
-		glm::ivec3 m_C[3]; //color
-	};
-
-	struct Texture
-	{
-		std::string m_FilePath;
-		glm::ivec2 m_Size = { 0, 0 };
-		unsigned char* m_LocalBuffer = nullptr;
-		int m_BPP = 0;
-		static Texture* Load(const std::string& filePath);
-		glm::vec3 Sample(glm::vec2 uv);
-		~Texture() { delete[] m_LocalBuffer; }
+		glm::ivec3 m_Color[3]; //color
 	};
 
 	struct Vertex
 	{
-		glm::vec3 m_P; //position in screen space
+		glm::vec3 m_FragPos; //position in screen space
 		glm::vec3 m_WorldPos; //interpolated position in world space
 		glm::vec3 m_Normal; //interpolated transformed normal
-		glm::ivec3 m_C; //color
+		glm::ivec3 m_Color; //interpolated color
 		glm::vec2 m_UV; //interpolated uv coordinates
-		Texture* m_Texture;
+		Material* m_Material = nullptr;
 	};
 
-	struct Point
-	{
-		glm::vec3 m_WorldPos; //interpolated position in world space
-		glm::vec3 m_Normal; //interpolated transformed normal
-		glm::ivec3 m_C; //color
-		glm::ivec2 m_P; //position in screen space
-		float m_Z; //interpolated z component for a depth buffer
-		glm::vec2 m_UV; //interpolated uv coordinates
-		Texture* m_Texture;
-
-		Point(const glm::ivec2& p = glm::ivec2(0),
-			const glm::ivec3& c = glm::ivec3(255, 255, 255),
-			const glm::vec3& fragPos = glm::vec3(0.0f),
-			const glm::vec3& normal = glm::vec3(0.0f),
-			const glm::vec2& uv = glm::vec2(0.0f),
-			Texture* texture = nullptr,
-			float z = 0.0f)
-		{
-			m_P = p;
-			m_C = c;
-			m_Z = z;
-			m_WorldPos = fragPos;
-			m_Normal = normal;
-			m_UV = uv;
-			m_Texture = texture;
-		}
-
-		Point(const Vertex& vertex)
-		{
-			m_P = vertex.m_P;
-			m_C = vertex.m_C;
-			m_WorldPos = vertex.m_WorldPos;
-			m_Normal = vertex.m_Normal;
-			m_UV = vertex.m_UV;
-			m_Texture = vertex.m_Texture;
-		}
-	};
-
-	struct TriangleV
+	struct Triangle
 	{
 		Vertex vertices[3];
 	};
 
 	struct Mesh
 	{
-		std::vector<Triangle> m_Triangles;
+		std::vector<TriangleInfo> m_Triangles;
 		std::vector<glm::vec3> m_Vertices;
 		std::vector<glm::vec3> m_Normals;
 		std::vector<glm::vec2> m_UV;
@@ -131,18 +99,18 @@ namespace sr
 	struct GameObject
 	{
 		Transform m_Transform;
+		Material m_Material;
 		Mesh* m_Mesh = nullptr;
-		Texture* m_Texture = nullptr;
-		static GameObject* Create();
+		GameObject();
 	};
 
 	struct Shader
 	{
 		std::function<glm::vec4 (const Transform&, const glm::mat4&, const glm::vec4&, const glm::vec3&, const glm::vec3&)> m_VertexShader;
-		std::function<glm::ivec3 (const glm::vec3&, const glm::ivec2&, const glm::vec3&, const glm::ivec3&, const glm::vec2&, Texture*)> m_FragmentShader;
+		std::function<glm::vec3 (const glm::vec3&, const glm::ivec2&, const glm::vec3&, const glm::vec3&, const glm::vec2&, const Material&)> m_FragmentShader;
 	};
 
-	enum class INPUT_STATE
+	enum class INPUTSTATE
 	{
 		NONE = -1,
 		PRESSED = 0,
@@ -159,7 +127,7 @@ namespace sr
 		KeyProps(int action)
 		{
 			m_Action = action;
-			m_PreviousAction = (int)INPUT_STATE::PRESSED;
+			m_PreviousAction = (int)INPUTSTATE::PRESSED;
 		}
 	};
 

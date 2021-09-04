@@ -10,57 +10,57 @@ LRESULT CALLBACK sr::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     {
         case WM_KEYDOWN:
         {
-            Input::KeyCallBack(wParam, (int)INPUT_STATE::PRESSED);
+            Input::KeyCallBack(wParam, (int)INPUTSTATE::PRESSED);
         }
         break;
         case WM_KEYUP:
         {
-            Input::KeyCallBack(wParam, (int)INPUT_STATE::UP);
+            Input::KeyCallBack(wParam, (int)INPUTSTATE::UP);
         }
         break;
         case WM_LBUTTONDBLCLK:
         {
-            Input::KeyCallBack(0x01, (int)INPUT_STATE::DOUBLECLICK);
+            Input::KeyCallBack(0x01, (int)INPUTSTATE::DOUBLECLICK);
         }
         break;
         case WM_LBUTTONUP:
         {
-            Input::KeyCallBack(0x01, (int)INPUT_STATE::UP);
+            Input::KeyCallBack(0x01, (int)INPUTSTATE::UP);
         }
         break;
         case WM_LBUTTONDOWN:
         {
-            Input::KeyCallBack(0x01, (int)INPUT_STATE::PRESSED);
+            Input::KeyCallBack(0x01, (int)INPUTSTATE::PRESSED);
         }
         break;
         case WM_RBUTTONDBLCLK:
         {
-            Input::KeyCallBack(0x02, (int)INPUT_STATE::DOUBLECLICK);
+            Input::KeyCallBack(0x02, (int)INPUTSTATE::DOUBLECLICK);
         }
         break;
         case WM_RBUTTONUP:
         {
-            Input::KeyCallBack(0x02, (int)INPUT_STATE::UP);
+            Input::KeyCallBack(0x02, (int)INPUTSTATE::UP);
         }
         break;
         case WM_RBUTTONDOWN:
         {
-            Input::KeyCallBack(0x02, (int)INPUT_STATE::PRESSED);
+            Input::KeyCallBack(0x02, (int)INPUTSTATE::PRESSED);
         }
         break;
         case WM_MBUTTONDBLCLK:
         {
-            Input::KeyCallBack(0x04, (int)INPUT_STATE::DOUBLECLICK);
+            Input::KeyCallBack(0x04, (int)INPUTSTATE::DOUBLECLICK);
         }
         break;
         case WM_MBUTTONUP:
         {
-            Input::KeyCallBack(0x04, (int)INPUT_STATE::UP);
+            Input::KeyCallBack(0x04, (int)INPUTSTATE::UP);
         }
         break;
         case WM_MBUTTONDOWN:
         {
-            Input::KeyCallBack(0x04, (int)INPUT_STATE::PRESSED);
+            Input::KeyCallBack(0x04, (int)INPUTSTATE::PRESSED);
         }
         break;
         case WM_CLOSE:
@@ -87,7 +87,7 @@ LRESULT CALLBACK sr::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     }
 }
 
-void sr::Window::Init(std::wstring title, glm::ivec2 size, glm::vec2 screenPixelsInBitMapPixels)
+void sr::Window::Init(const std::wstring& title, const glm::ivec2& size, const glm::vec2& screenPixelsInBitMapPixels)
 {
     m_Title = title;
     m_HInstance = GetModuleHandle(nullptr);
@@ -164,7 +164,7 @@ glm::ivec2 sr::Window::GetSize(HWND hWnd)
     return { rect.right - rect.left, rect.bottom - rect.top };
 }
 
-void sr::Window::Resize(glm::ivec2 size)
+void sr::Window::Resize(const glm::ivec2& size)
 {
     if (m_BitMapMemory)
     {
@@ -213,41 +213,36 @@ void sr::Window::Update()
     ReleaseDC(m_HWnd, DeviceContext);
 }
 
-void sr::Window::Clear(glm::ivec3 color)
+void sr::Window::Clear(const glm::ivec3& color)
 {
+    auto ClearBitMapJob = [](const glm::ivec2& bitMapSize, const glm::ivec3& color, float* depthBuffer, size_t start, size_t end)
+    {
+        for (size_t i = start; i < end; i++)
+        {
+            for (size_t j = 0; j < bitMapSize.y; j++)
+            {
+                Renderer::FillPixel(glm::ivec2(i, j), color);
+                depthBuffer[j * bitMapSize.x + i] = 1.0f;
+            }
+        }
+    };
+
     size_t numThreads = ThreadPool::GetInstance().GetAmountOfThreads();
     float dif = (float)m_BitMapSize.x / (float)numThreads;
+
     for (size_t k = 0; k < numThreads - 1; k++)
     {
         m_SyncParams.s_Ready[k] = false;
         ThreadPool::GetInstance().Enqueue([=] {
-            uint32_t thisSegmentOfObjectsV = k * dif + dif;
-            for (size_t i = k * dif; i < thisSegmentOfObjectsV; i++)
-            {
-                for (size_t j = 0; j < m_BitMapSize.y; j++)
-                {
-                    Renderer::FillPixel(glm::ivec2(i, j), color);
-                    m_DepthBuffer[j * m_BitMapSize.x + i] = 1.0f;
-                }
-            }
-            {
-                m_SyncParams.ThreadFinished(k);
-            }
+            ClearBitMapJob(m_BitMapSize, color, m_DepthBuffer, k * dif, k * dif + dif);
+            m_SyncParams.ThreadFinished(k);
         });
     }
+
     m_SyncParams.s_Ready[numThreads - 1] = false;
     ThreadPool::GetInstance().Enqueue([=] {
-        for (size_t i = (numThreads - 1) * dif; i < m_BitMapSize.x; i++)
-        {
-            for (size_t j = 0; j < m_BitMapSize.y; j++)
-            {
-                Renderer::FillPixel(glm::ivec2(i, j), color);
-                m_DepthBuffer[j * m_BitMapSize.x + i] = 1.0f;
-            }
-        }
-        {
-            m_SyncParams.ThreadFinished(numThreads - 1);
-        }
+        ClearBitMapJob(m_BitMapSize, color, m_DepthBuffer, (numThreads - 1) * dif, m_BitMapSize.x);
+        m_SyncParams.ThreadFinished(numThreads - 1);
     });
 
     m_SyncParams.WaitForAllThreads();

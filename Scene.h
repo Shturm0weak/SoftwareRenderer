@@ -13,11 +13,11 @@ namespace sr
 		Scene& operator=(const Scene&) = delete;
 		~Scene() = default;
 
-		void DrawTriangle(const GameObject& go, const Triangle& triangle);
+		void DrawTriangle(GameObject& go, const TriangleInfo& triangle);
 		void ClipAgainstTheScreen();
 	private:
 
-		std::vector<TriangleV> m_TrianglesToClip;
+		std::vector<Triangle> m_TrianglesToClip;
 	public:
 
 		std::vector<Texture*> m_Textures;

@@ -5,8 +5,8 @@
 sr::Mesh* objl::Loader::Load(const std::string& filePath)
 {
 	objl::Loader loader;
-	bool loadout = loader.LoadFile(filePath);
-	if (loadout)
+	bool loadOut = loader.LoadFile(filePath);
+	if (loadOut)
 	{
 		for (size_t i = 0; i < loader.LoadedMeshes.size(); i++)
 		{
@@ -21,13 +21,14 @@ sr::Mesh* objl::Loader::Load(const std::string& filePath)
 
 			for (size_t j = 0; j < curMesh.Indices.size(); j += 3)
 			{
-				mesh->m_Triangles.push_back(sr::Triangle());
-				mesh->m_Triangles.back().m_Indices[0] = curMesh.Indices[j + 0];
-				mesh->m_Triangles.back().m_Indices[1] = curMesh.Indices[j + 1];
-				mesh->m_Triangles.back().m_Indices[2] = curMesh.Indices[j + 2];
-				mesh->m_Triangles.back().m_C[0] = glm::ivec3(225, 225, 225);
-				mesh->m_Triangles.back().m_C[1] = glm::ivec3(225, 225, 225);
-				mesh->m_Triangles.back().m_C[2] = glm::ivec3(225, 225, 225);
+				sr::TriangleInfo triangle;
+				triangle.m_Indices[0] = curMesh.Indices[j + 0];
+				triangle.m_Indices[1] = curMesh.Indices[j + 1];
+				triangle.m_Indices[2] = curMesh.Indices[j + 2];
+				triangle.m_Color[0] = glm::ivec3(225, 225, 225);
+				triangle.m_Color[1] = glm::ivec3(225, 225, 225);
+				triangle.m_Color[2] = glm::ivec3(225, 225, 225);
+				mesh->m_Triangles.push_back(triangle);
 			}
 			sr::Scene::GetInstance().m_Meshes.push_back(mesh);
 			return mesh;

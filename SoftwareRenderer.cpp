@@ -18,9 +18,9 @@ int main(void)
 	std::wstring title = L"Software renderer";
 	window.Init(title, glm::ivec2(1024, 960), glm::vec2(1.0f));
 	scene.m_Camera.m_Position = glm::vec3(0.0f, 0.0f, 10.0f);
-	sr::Mesh* cube = objl::Loader::Load("assets/Cube.obj");
-	sr::Texture* dirt = sr::Texture::Load("assets/Dirt.png");
-	for (size_t i = 0; i < 5; i++)
+	sr::Mesh* sphere = objl::Loader::Load("assets/Plane.obj");
+	sr::Texture* earth = sr::Texture::Load("assets/Earth.png");
+	/*for (size_t i = 0; i < 5; i++)
 	{
 		for (size_t j = 0; j < 5; j++)
 		{
@@ -30,7 +30,16 @@ int main(void)
 			go->m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 			go->m_Texture = dirt;
 		}
-	}
+	}*/
+
+	sr::GameObject* go = new sr::GameObject;
+	go->m_Mesh = sphere;
+	go->m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f));
+	//go->m_Transform.m_View = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	go->m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	go->m_Material.m_Ambient = 0.4f;
+	go->m_Material.m_Specular = 2.0f;
+	go->m_Material.m_Texture = earth;
 
 	sr::Shader shader;
 	shader.m_VertexShader = [](
@@ -47,32 +56,30 @@ int main(void)
 		const glm::vec3& worldPos,
 		const glm::ivec2& fragPos,
 		const glm::vec3& normal,
-		const glm::ivec3& color,
+		const glm::vec3& color,
 		const glm::vec2& uv,
-		sr::Texture* texture)
+		const sr::Material& material)
 	{
 		sr::Scene& scene = sr::Scene::GetInstance();
 		sr::Window& window = sr::Window::GetInstance();
 		
-		glm::vec3 diffuseTextureColor = { 255.0f, 255.0f, 255.0f };
-		//if (texture != nullptr)
-		//{
-			diffuseTextureColor = texture->Sample(uv);
-		//}
+		glm::vec3 diffuseTextureColor = { 1.0f, 1.0f, 1.0f };
+		if (material.m_Texture != nullptr)
+		{
+			diffuseTextureColor = material.m_Texture->Sample(uv);
+		}
 
-		float colorFraction = 0.004f; //1.0f / 255.0f;
-		diffuseTextureColor *= colorFraction;
-		glm::vec3 ambient = 0.2f * (glm::vec3(color) * colorFraction) * diffuseTextureColor;
+		glm::vec3 ambient = material.m_Ambient * color * diffuseTextureColor;
 		scene.m_LightDir = Normalize(scene.m_LightDir);
 		glm::vec3 diffuseStrength = Max(glm::dot(normal, scene.m_LightDir), 0.0f) * diffuseTextureColor;
-
+		
 		glm::vec3 viewDir = Normalize(scene.m_Camera.m_Position - worldPos);
 		glm::vec3 reflectDir = Reflect(-scene.m_LightDir, normal);
-		glm::vec3 specular = 0.4f * (float)glm::pow(Max(glm::dot(viewDir, reflectDir), 0.0f), 32) * diffuseTextureColor;
-
+		glm::vec3 specular = material.m_Specular * (float)glm::pow(Max(glm::dot(viewDir, reflectDir), 0.0f), 32) * diffuseTextureColor;
+		
 		const float gamma = 2.2f;
 		ambient += (diffuseStrength + specular);
-		return glm::ivec3(glm::pow(Clamp(ambient), glm::vec3(1.0 / gamma)) * 255.0f);
+		return glm::pow(Clamp(diffuseTextureColor + color), glm::vec3(1.0 / gamma));
 	};
 	scene.m_BindedShader = &shader;
 
@@ -82,7 +89,9 @@ int main(void)
 	while (window.m_IsRunning)
 	{
 		if (window.ProcessMessages() == false)
+		{
 			window.m_IsRunning = false;
+		}
 
 		double time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 		scene.m_Time.m_DeltaTime = fabs(scene.m_Time.m_LastTime - time);
@@ -93,24 +102,19 @@ int main(void)
 		{
 			switch (window.m_DrawBuffer)
 			{
-				case sr::BUFFER_STATE::SHADER:
+				case sr::BUFFERSTATE::SHADER:
 				{
-					window.m_DrawBuffer = sr::BUFFER_STATE::AMBIENT;
+					window.m_DrawBuffer = sr::BUFFERSTATE::DEPTH;
 					break;
 				}
-				case sr::BUFFER_STATE::AMBIENT:
+				case sr::BUFFERSTATE::DEPTH:
 				{
-					window.m_DrawBuffer = sr::BUFFER_STATE::DEPTH;
+					window.m_DrawBuffer = sr::BUFFERSTATE::WIREFRAME;
 					break;
 				}
-				case sr::BUFFER_STATE::DEPTH:
+				case sr::BUFFERSTATE::WIREFRAME:
 				{
-					window.m_DrawBuffer = sr::BUFFER_STATE::WIREFRAME;
-					break;
-				}
-				case sr::BUFFER_STATE::WIREFRAME:
-				{
-					window.m_DrawBuffer = sr::BUFFER_STATE::SHADER;
+					window.m_DrawBuffer = sr::BUFFERSTATE::SHADER;
 					break;
 				}
 				default:

@@ -6,7 +6,7 @@ bool sr::Input::IsMouseDoubleClicked(int keycode)
     auto keyIter = s_Keys.find(keycode);
     if (keyIter != s_Keys.end())
     {
-        if (keyIter->second.m_Action == (int)INPUT_STATE::DOUBLECLICK)
+        if (keyIter->second.m_Action == (int)INPUTSTATE::DOUBLECLICK)
         {
             return true;
         }
@@ -20,8 +20,8 @@ bool sr::Input::IsKeyDown(int keycode)
     //auto keyIter = s_Keys.find(keycode);
     //if (keyIter != s_Keys.end())
     //{
-    //    if (keyIter->second.m_Action == (int)INPUT_STATE::DOWN || 
-    //        keyIter->second.m_Action == (int)INPUT_STATE::PRESSED)
+    //    if (keyIter->second.m_Action == (int)INPUTSTATE::DOWN || 
+    //        keyIter->second.m_Action == (int)INPUTSTATE::PRESSED)
     //    {
     //        return true;
     //    }
@@ -36,7 +36,7 @@ bool sr::Input::IsKeyPressed(int keycode)
     auto keyIter = s_Keys.find(keycode);
     if (keyIter != s_Keys.end())
     {
-        if (keyIter->second.m_Action == (int)INPUT_STATE::PRESSED)
+        if (keyIter->second.m_Action == (int)INPUTSTATE::PRESSED)
         {
             return true;
         }
@@ -49,7 +49,7 @@ bool sr::Input::IsKeyReleased(int keycode)
     auto keyIter = s_Keys.find(keycode);
     if (keyIter != s_Keys.end())
     {
-        if (keyIter->second.m_Action == (int)INPUT_STATE::UP)
+        if (keyIter->second.m_Action == (int)INPUTSTATE::UP)
         {
             return true;
         }
@@ -61,7 +61,7 @@ void sr::Input::ResetInput()
 {
     for (auto keyIter = s_Keys.begin(); keyIter != s_Keys.end(); keyIter++)
     {
-        keyIter->second.m_Action = (int)INPUT_STATE::NONE;
+        keyIter->second.m_Action = (int)INPUTSTATE::NONE;
     }
 }
 
@@ -70,10 +70,10 @@ void sr::Input::KeyCallBack(int key, int action)
     auto keyIter = s_Keys.find(key);
     if (keyIter != s_Keys.end())
     {
-        if (action == (int)INPUT_STATE::PRESSED &&
-            keyIter->second.m_PreviousAction == (int)INPUT_STATE::PRESSED)
+        if (action == (int)INPUTSTATE::PRESSED &&
+            keyIter->second.m_PreviousAction == (int)INPUTSTATE::PRESSED)
         {
-            keyIter->second.m_Action = (int)INPUT_STATE::NONE;
+            keyIter->second.m_Action = (int)INPUTSTATE::NONE;
         }
         else
         {

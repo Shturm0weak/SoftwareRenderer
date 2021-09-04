@@ -5,11 +5,9 @@
 #include "Scene.h"
 #include "stb_image.h"
 
-sr::GameObject* sr::GameObject::Create()
+sr::GameObject::GameObject()
 {
-    GameObject* go = new GameObject();
-    Scene::GetInstance().m_GameObjects.push_back(go);
-    return go;
+    Scene::GetInstance().m_GameObjects.push_back(this);
 }
 
 void sr::Camera::RecalculateProjectionMatrix()
@@ -89,9 +87,13 @@ void sr::Camera::Move()
 void sr::Camera::Clamp()
 {
     if (m_Yaw > glm::two_pi<float>() || m_Yaw < -glm::two_pi<float>())
+    {
         m_Yaw = 0;
+    }
     if (m_Pitch > glm::two_pi<float>() || m_Pitch < -glm::two_pi<float>())
+    {
         m_Pitch = 0;
+    }
 }
 
 sr::Texture* sr::Texture::Load(const std::string& filePath)
@@ -115,5 +117,5 @@ glm::vec3 sr::Texture::Sample(glm::vec2 uv)
     uint8_t* texel;
     int position = (pos.x + pos.y * m_Size.x) * m_BPP;
     texel = &((uint8_t*)m_LocalBuffer)[position];
-    return { texel[0], texel[1], texel[2] };
+    return glm::vec3(texel[0], texel[1], texel[2]) * (1.0f / 255.0f);
 }

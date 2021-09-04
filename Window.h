@@ -12,29 +12,31 @@ namespace sr
 	{
 	public:
 
-		Window(const Window&) = delete;
-		Window& operator=(const Window&) = delete;
-		~Window();
-
-		void Init(std::wstring title = L"Software renderer", glm::ivec2 size = { 800, 600 }, glm::vec2 screenPixelsInBitMapPixels = { 1.0f, 1.0f });
-		inline static Window& GetInstance();
-
+		static Window& GetInstance();
 		glm::ivec2 GetSize(HWND hWnd = GetInstance().m_HWnd);
+		void Init(
+			const std::wstring& title = L"Software renderer",
+			const glm::ivec2& size = { 800, 600 },
+			const glm::vec2& screenPixelsInBitMapPixels = { 1.0f, 1.0f }
+		);
 		void SetTitle(const std::wstring& title);
 		void Update();
-		void Resize(glm::ivec2 size);
-		void Clear(glm::ivec3 color);
+		void Resize(const glm::ivec2& size);
+		void Clear(const glm::ivec3& color);
 		bool ProcessMessages();
 	public:
 
 		std::wstring m_Title;
 		glm::vec2 m_ScreenPixelsInBitMapPixels;
 		glm::ivec2 m_BitMapSize;
-		BUFFER_STATE m_DrawBuffer = BUFFER_STATE::SHADER;
+		BUFFERSTATE m_DrawBuffer = BUFFERSTATE::SHADER;
 		bool m_IsRunning = true;
 	private:
 
 		Window() = default;
+		Window(const Window&) = delete;
+		Window& operator=(const Window&) = delete;
+		~Window();
 	private:
 
 		HINSTANCE m_HInstance;
