@@ -17,15 +17,16 @@ namespace sr
 		unsigned char* m_LocalBuffer = nullptr;
 		int m_BPP = 0;
 		static Texture* Load(const std::string& filePath);
-		glm::vec3 Sample(glm::vec2 uv);
+		glm::vec4 Sample(glm::vec2 uv);
 		~Texture() { delete[] m_LocalBuffer; }
 	};
 
 	struct Material
 	{
+		glm::vec4 m_Color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		Texture* m_Texture = nullptr;
 		float m_Specular = 0.1f;
 		float m_Ambient = 0.2f;
-		Texture* m_Texture = nullptr;
 	};
 
 	struct Camera
@@ -55,7 +56,7 @@ namespace sr
 	struct TriangleInfo
 	{
 		glm::uvec3 m_Indices;
-		glm::ivec3 m_Color[3]; //color
+		glm::vec4 m_Color[3]; //color
 	};
 
 	struct Vertex
@@ -63,9 +64,11 @@ namespace sr
 		glm::vec3 m_FragPos; //position in screen space
 		glm::vec3 m_WorldPos; //interpolated position in world space
 		glm::vec3 m_Normal; //interpolated transformed normal
-		glm::ivec3 m_Color; //interpolated color
+		glm::vec4 m_Color; //interpolated color
 		glm::vec2 m_UV; //interpolated uv coordinates
 		Material* m_Material = nullptr;
+
+		void operator*=(float invZ);
 	};
 
 	struct Triangle
@@ -79,7 +82,7 @@ namespace sr
 		std::vector<glm::vec3> m_Vertices;
 		std::vector<glm::vec3> m_Normals;
 		std::vector<glm::vec2> m_UV;
-		glm::ivec3 m_Color = { 255, 255, 255 };
+		glm::vec4 m_Color = glm::vec4(1.0f);
 	};
 
 	struct Transform
@@ -107,7 +110,7 @@ namespace sr
 	struct Shader
 	{
 		std::function<glm::vec4 (const Transform&, const glm::mat4&, const glm::vec4&, const glm::vec3&, const glm::vec3&)> m_VertexShader;
-		std::function<glm::vec3 (const glm::vec3&, const glm::ivec2&, const glm::vec3&, const glm::vec3&, const glm::vec2&, const Material&)> m_FragmentShader;
+		std::function<glm::vec4 (const glm::vec3&, const glm::ivec2&, const glm::vec3&, const glm::vec4&, const glm::vec2&, const Material&)> m_FragmentShader;
 	};
 
 	enum class INPUTSTATE

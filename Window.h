@@ -22,7 +22,7 @@ namespace sr
 		void SetTitle(const std::wstring& title);
 		void Update();
 		void Resize(const glm::ivec2& size);
-		void Clear(const glm::ivec3& color);
+		void Clear(const glm::ivec4& color);
 		bool ProcessMessages();
 	public:
 
@@ -42,9 +42,12 @@ namespace sr
 		HINSTANCE m_HInstance;
 		HWND m_HWnd;
 		BITMAPINFO m_BitMapInfo;
+		HBITMAP m_HBitMap;
+		BLENDFUNCTION m_BlendFunction;
 		SyncParams m_SyncParams;
 		float* m_DepthBuffer = nullptr;
 		void* m_BitMapMemory = nullptr;
+		bool m_DiscradPixel = false;
 
 		friend class Renderer;
 		friend class Scene;

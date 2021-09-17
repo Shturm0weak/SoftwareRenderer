@@ -129,6 +129,12 @@ void sr::Window::Init(const std::wstring& title, const glm::ivec2& size, const g
     );
 
     ShowWindow(m_HWnd, SW_SHOW);
+
+    m_BlendFunction.BlendOp = AC_SRC_OVER;
+    m_BlendFunction.BlendFlags = 0;
+    m_BlendFunction.SourceConstantAlpha = 0xff;
+    m_BlendFunction.AlphaFormat = AC_SRC_ALPHA;
+
 }
 
 sr::Window::~Window()
@@ -168,6 +174,7 @@ void sr::Window::Resize(const glm::ivec2& size)
 {
     if (m_BitMapMemory)
     {
+        //DeleteObject(m_HBitMap);
         VirtualFree(m_BitMapMemory, 0, MEM_RELEASE);
         delete[] m_DepthBuffer;
     }
@@ -180,11 +187,13 @@ void sr::Window::Resize(const glm::ivec2& size)
     m_BitMapInfo.bmiHeader.biPlanes = 1;
     m_BitMapInfo.bmiHeader.biBitCount = 32;
     m_BitMapInfo.bmiHeader.biCompression = BI_RGB;
+    m_BitMapInfo.bmiHeader.biSizeImage = m_BitMapSize.x * m_BitMapSize.y * 4;
 
-    int m_BitMapMemorySize = (m_BitMapSize.x * m_BitMapSize.y) * 4;
+    int m_BitMapMemorySize = m_BitMapSize.x * m_BitMapSize.y * 4;
     m_BitMapMemory = VirtualAlloc(0, m_BitMapMemorySize, MEM_COMMIT, PAGE_READWRITE);
     m_DepthBuffer = new float[m_BitMapSize.x * m_BitMapSize.y];
 
+    //m_HBitMap = CreateDIBSection(CreateCompatibleDC(GetDC(m_HWnd)), &m_BitMapInfo, DIB_RGB_COLORS, &m_BitMapMemory, NULL, 0x0);
     //sr::Scene::GetInstance().camera.RecalculateProjectionMatrix(); due to call this in Camera::Move() every frame
 }
 
@@ -201,7 +210,8 @@ void sr::Window::Update()
     GetClientRect(m_HWnd, &rect);
     int windowWidth = rect.right - rect.left;
     int windowHeight = rect.bottom - rect.top;
-    //SetStretchBltMode(DeviceContext, BLACKONWHITE);
+    //SetDIBitsToDevice(DeviceContext, 0, 0, windowWidth, windowHeight, 0, 0, 0, m_BitMapSize.y, m_BitMapMemory, &m_BitMapInfo, DIB_RGB_COLORS);
+    SetStretchBltMode(DeviceContext, BLACKONWHITE);
     StretchDIBits(
         DeviceContext,
         0, 0, windowWidth, windowHeight,
@@ -211,11 +221,21 @@ void sr::Window::Update()
         DIB_RGB_COLORS, SRCCOPY
     );
     ReleaseDC(m_HWnd, DeviceContext);
+    
+    //SelectObject(DeviceContext, m_HBitMap);
+    //AlphaBlend(CreateCompatibleDC(GetDC(m_HWnd)),
+    //    0, 0,
+    //    windowWidth,
+    //    windowHeight,
+    //    DeviceContext,
+    //    0, 0, m_BitMapSize.x, m_BitMapSize.y, 
+    //    m_BlendFunction
+    //);
 }
 
-void sr::Window::Clear(const glm::ivec3& color)
+void sr::Window::Clear(const glm::ivec4& color)
 {
-    auto ClearBitMapJob = [](const glm::ivec2& bitMapSize, const glm::ivec3& color, float* depthBuffer, size_t start, size_t end)
+    auto ClearBitMapJob = [](const glm::ivec2& bitMapSize, const glm::ivec4& color, float* depthBuffer, size_t start, size_t end)
     {
         for (size_t i = start; i < end; i++)
         {

@@ -7,29 +7,30 @@ inline glm::vec3 Normalize(const glm::vec3& vector)
 	return vector * (1.0f / l);
 }
 
-inline float Lerp(const float& y1, const float& y2, const float& x)
+inline float Lerp(const float& y1, const float& y2, const float& t)
 {
-	return y1 + x * (y2 - y1);
+	//return y1 + t * (y2 - y1);
+	return (1 - t) * y1 + t * y2;
 }
 
-inline glm::vec2 Lerp(const glm::vec2& y1, const glm::vec2& y2, float x)
+inline glm::vec2 Lerp(const glm::vec2& y1, const glm::vec2& y2, float t)
 {
-	return { Lerp(y1.x, y2.x, x), Lerp(y1.y, y2.y, x) };
+	return { Lerp(y1.x, y2.x, t), Lerp(y1.y, y2.y, t) };
 }
 
-inline glm::vec3 Lerp(const glm::vec3& y1, const glm::vec3& y2, float x)
+inline glm::vec3 Lerp(const glm::vec3& y1, const glm::vec3& y2, float t)
 {
-	return { Lerp(y1.x, y2.x, x), Lerp(y1.y, y2.y, x), Lerp(y1.z, y2.z, x) };
+	return { Lerp(y1.x, y2.x, t), Lerp(y1.y, y2.y, t), Lerp(y1.z, y2.z, t) };
 }
 
-inline glm::vec4 Lerp(const glm::vec4& y1, const glm::vec4& y2, float x)
+inline glm::vec4 Lerp(const glm::vec4& y1, const glm::vec4& y2, float t)
 {
-	return { Lerp(y1.x, y2.x, x), Lerp(y1.y, y2.y, x), Lerp(y1.z, y2.z, x), Lerp(y1.w, y2.w, x ) };
+	return { Lerp(y1.x, y2.x, t), Lerp(y1.y, y2.y, t), Lerp(y1.z, y2.z, t), Lerp(y1.w, y2.w, t ) };
 }
 
-inline glm::ivec3 Lerp(const glm::ivec3& y1, const glm::ivec3& y2, float x)
+inline glm::ivec3 Lerp(const glm::ivec3& y1, const glm::ivec3& y2, float t)
 {
-	return { Lerp(y1.x, y2.x, x), Lerp(y1.y, y2.y, x), Lerp(y1.z, y2.z, x) };
+	return { Lerp(y1.x, y2.x, t), Lerp(y1.y, y2.y, t), Lerp(y1.z, y2.z, t) };
 }
 
 float Max(float a, float b)
@@ -40,28 +41,6 @@ float Max(float a, float b)
 glm::vec3 Reflect(const glm::vec3& i, const glm::vec3& n)
 {
 	return i - n * 2.0f * glm::dot(n, i);
-}
-
-glm::vec3 Clamp(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c)
-{
-	glm::vec3 result = a;
-	result.x = result.x > c.x ? c.x : result.x;
-	result.y = result.y > c.y ? c.y : result.y;
-	result.z = result.z > c.z ? c.z : result.z;
-	result.x = result.x < b.x ? b.x : result.x;
-	result.y = result.y < b.y ? b.y : result.y;
-	result.z = result.z < b.z ? b.z : result.z;
-	return result;
-}
-
-glm::vec2 Clamp(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c)
-{
-	glm::vec2 result = a;
-	result.x = result.x > c.x ? c.x : result.x;
-	result.y = result.y > c.y ? c.y : result.y;
-	result.x = result.x < b.x ? b.x : result.x;
-	result.y = result.y < b.y ? b.y : result.y;
-	return result;
 }
 
 inline glm::vec3 IntersectPlane(glm::vec3& planeP, glm::vec3& planeN, glm::vec3& start, glm::vec3& end, float& t)
@@ -139,8 +118,8 @@ int TriangleClipAgainstPlane(glm::vec3 planeP, glm::vec3 planeN, sr::Triangle& i
 			outTri1.vertices[1].m_FragPos = Lerp(inside_points[0]->m_FragPos, outside_points[0]->m_FragPos, t1);
 			outTri1.vertices[2].m_FragPos = Lerp(inside_points[0]->m_FragPos, outside_points[1]->m_FragPos, t2);
 		}
-		outTri1.vertices[1].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1);
-		outTri1.vertices[2].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[1]->m_Normal, t2);
+		outTri1.vertices[1].m_Normal = Normalize(Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1));
+		outTri1.vertices[2].m_Normal = Normalize(Lerp(inside_points[0]->m_Normal, outside_points[1]->m_Normal, t2));
 		outTri1.vertices[1].m_Color = Lerp(inside_points[0]->m_Color, outside_points[0]->m_Color, t1);
 		outTri1.vertices[2].m_Color = Lerp(inside_points[0]->m_Color, outside_points[1]->m_Color, t2);
 		outTri1.vertices[1].m_UV = Lerp(inside_points[0]->m_UV, outside_points[0]->m_UV, t1);
@@ -165,8 +144,8 @@ int TriangleClipAgainstPlane(glm::vec3 planeP, glm::vec3 planeN, sr::Triangle& i
 			outTri2.vertices[1].m_FragPos = outTri1.vertices[2].m_FragPos;
 			outTri2.vertices[2].m_FragPos = Lerp(inside_points[1]->m_FragPos, outside_points[0]->m_FragPos, t2);
 		}
-		outTri1.vertices[2].m_Normal = Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1);
-		outTri2.vertices[2].m_Normal = Lerp(inside_points[1]->m_Normal, outside_points[0]->m_Normal, t2);
+		outTri1.vertices[2].m_Normal = Normalize(Lerp(inside_points[0]->m_Normal, outside_points[0]->m_Normal, t1));
+		outTri2.vertices[2].m_Normal = Normalize(Lerp(inside_points[1]->m_Normal, outside_points[0]->m_Normal, t2));
 		outTri1.vertices[2].m_Color = Lerp(inside_points[0]->m_Color, outside_points[0]->m_Color, t1);
 		outTri2.vertices[2].m_Color = Lerp(inside_points[1]->m_Color, outside_points[0]->m_Color, t2);
 		outTri1.vertices[2].m_UV = Lerp(inside_points[0]->m_UV, outside_points[0]->m_UV, t1);

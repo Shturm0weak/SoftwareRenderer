@@ -16,10 +16,14 @@ int main(void)
 	sr::Scene& scene = sr::Scene::GetInstance();
 	sr::Window& window = sr::Window::GetInstance();
 	std::wstring title = L"Software renderer";
-	window.Init(title, glm::ivec2(1024, 960), glm::vec2(1.0f));
-	scene.m_Camera.m_Position = glm::vec3(0.0f, 0.0f, 10.0f);
-	sr::Mesh* sphere = objl::Loader::Load("assets/Plane.obj");
-	sr::Texture* earth = sr::Texture::Load("assets/Earth.png");
+	window.Init(title, glm::ivec2(1024, 960), glm::vec2(20.0f));
+	scene.m_Camera.m_Position = glm::vec3(-3.2f, 4.0f, 0.0f);
+	scene.m_Camera.m_Yaw = glm::radians(-20.0f);
+	scene.m_Camera.m_Pitch = glm::radians(-20.0f);
+	sr::Mesh* model = objl::Loader::Load("assets/Sphere.obj");
+
+	sr::Texture::Load("assets/WhiteTexture.png");
+	sr::Texture* texture = sr::Texture::Load("assets/Earth.png");
 	/*for (size_t i = 0; i < 5; i++)
 	{
 		for (size_t j = 0; j < 5; j++)
@@ -33,13 +37,24 @@ int main(void)
 	}*/
 
 	sr::GameObject* go = new sr::GameObject;
-	go->m_Mesh = sphere;
-	go->m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f));
-	//go->m_Transform.m_View = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	go->m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	go->m_Mesh = model;
+	//go->m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	//go->m_Transform.m_View = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	go->m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(3.0f, 3.0f, 3.0f));
 	go->m_Material.m_Ambient = 0.4f;
-	go->m_Material.m_Specular = 2.0f;
-	go->m_Material.m_Texture = earth;
+	go->m_Material.m_Specular = 0.8f;
+	go->m_Material.m_Texture = texture;
+
+	/*sr::GameObject* go1 = new sr::GameObject;
+	go1->m_Mesh = model;
+	go1->m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	go1->m_Transform.m_View = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	go1->m_Transform.m_View = glm::rotate(go1->m_Transform.m_View, glm::radians(-180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	go1->m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(3.0f, 3.0f, 3.0f));
+	go1->m_Material.m_Ambient = 0.4f;
+	go1->m_Material.m_Specular = 0.2f;
+	go1->m_Material.m_Color = { 1.0f, 0.0f, 0.0f, 1.0f };
+	go1->m_Material.m_Texture = texture;*/
 
 	sr::Shader shader;
 	shader.m_VertexShader = [](
@@ -56,35 +71,32 @@ int main(void)
 		const glm::vec3& worldPos,
 		const glm::ivec2& fragPos,
 		const glm::vec3& normal,
-		const glm::vec3& color,
+		const glm::vec4& color,
 		const glm::vec2& uv,
 		const sr::Material& material)
 	{
 		sr::Scene& scene = sr::Scene::GetInstance();
 		sr::Window& window = sr::Window::GetInstance();
-		
-		glm::vec3 diffuseTextureColor = { 1.0f, 1.0f, 1.0f };
-		if (material.m_Texture != nullptr)
-		{
-			diffuseTextureColor = material.m_Texture->Sample(uv);
-		}
+	
+		glm::vec4 diffuseTextureColor = material.m_Texture->Sample(uv);
 
-		glm::vec3 ambient = material.m_Ambient * color * diffuseTextureColor;
+		glm::vec4 ambient = material.m_Ambient * material.m_Color * color * diffuseTextureColor;
 		scene.m_LightDir = Normalize(scene.m_LightDir);
-		glm::vec3 diffuseStrength = Max(glm::dot(normal, scene.m_LightDir), 0.0f) * diffuseTextureColor;
+		float diffuseStrength = Max(glm::dot(normal, scene.m_LightDir), 0.0f);
 		
 		glm::vec3 viewDir = Normalize(scene.m_Camera.m_Position - worldPos);
-		glm::vec3 reflectDir = Reflect(-scene.m_LightDir, normal);
-		glm::vec3 specular = material.m_Specular * (float)glm::pow(Max(glm::dot(viewDir, reflectDir), 0.0f), 32) * diffuseTextureColor;
+		glm::vec3 reflectDir = Normalize(Reflect(-scene.m_LightDir, normal));
+		float specular = material.m_Specular * (float)glm::pow(Max(glm::dot(viewDir, reflectDir), 0.0f), 32);
 		
 		const float gamma = 2.2f;
-		ambient += (diffuseStrength + specular);
-		return glm::pow(Clamp(diffuseTextureColor + color), glm::vec3(1.0 / gamma));
+		ambient += (diffuseStrength + specular) * diffuseTextureColor;
+		ambient = sr::Renderer::GammaCorrection(ambient, gamma);
+		return glm::clamp(ambient, glm::vec4(0.0f), glm::vec4(1.0f));
 	};
 	scene.m_BindedShader = &shader;
 
 	float angle = 0.0f;
-	double timeToReDrawFps = 0;
+	double timeToReDrawFps = 0.0;
 
 	while (window.m_IsRunning)
 	{
@@ -127,28 +139,26 @@ int main(void)
 		if (sr::Input::IsKeyDown(0x45))
 		{
 			window.m_ScreenPixelsInBitMapPixels += scene.m_Time.m_DeltaTime;
-			window.m_ScreenPixelsInBitMapPixels = Clamp(window.m_ScreenPixelsInBitMapPixels, glm::vec2(1.0f), glm::vec2(50.0f));
+			window.m_ScreenPixelsInBitMapPixels = glm::clamp(window.m_ScreenPixelsInBitMapPixels, glm::vec2(1.0f), glm::vec2(2.0f));
 			window.Resize(window.GetSize());
 			std::cout << window.m_ScreenPixelsInBitMapPixels.x << std::endl;
 		}
 		else if (sr::Input::IsKeyDown(0x51))
 		{
 			window.m_ScreenPixelsInBitMapPixels -= scene.m_Time.m_DeltaTime;
-			window.m_ScreenPixelsInBitMapPixels = Clamp(window.m_ScreenPixelsInBitMapPixels, glm::vec2(1.0f), glm::vec2(50.0f));
+			window.m_ScreenPixelsInBitMapPixels = glm::clamp(window.m_ScreenPixelsInBitMapPixels, glm::vec2(1.0f), glm::vec2(2.0f));
 			window.Resize(window.GetSize());
 			std::cout << window.m_ScreenPixelsInBitMapPixels.x << std::endl;
 		}
 
-		//if (sr::Input::IsKeyDown(0x4C))
-		//{
-		//	angle += scene.m_Time.m_DeltaTime;
-		//	go.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
-		//}
-		//else if (sr::Input::IsKeyDown(0x4B))
-		//{
-		//	angle -= scene.m_Time.m_DeltaTime;
-		//	go.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
-		//}
+		if (sr::Input::IsKeyPressed(0x4C))
+		{
+			
+		}
+		else if (sr::Input::IsKeyPressed(0x4B))
+		{
+			
+		}
 
 		timeToReDrawFps += scene.m_Time.m_DeltaTime;
 		if (timeToReDrawFps > 0.0)
@@ -157,10 +167,10 @@ int main(void)
 			timeToReDrawFps = 0;
 		}
 		
-		//go.m_Transform.m_View = glm::rotate(glm::mat4(1.0f), scene.s_Time.m_GlobalTime * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+		//go->m_Transform.m_View = glm::rotate(glm::mat4(1.0f), (float)scene.m_Time.m_GlobalTime, glm::vec3(1.0f, 0.0f, 0.0f));
 		
 		scene.m_Camera.Move();
-		window.Clear(glm::ivec3(255));
+		window.Clear(glm::ivec4(255));
 		scene.DrawGameObjects();
 		window.Update();
 	}

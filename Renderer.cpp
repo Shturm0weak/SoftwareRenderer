@@ -15,13 +15,38 @@ uint8_t* sr::Renderer::GetPixel(const glm::ivec2& pos)
     return nullptr;
 }
 
-void sr::Renderer::FillPixel(const glm::ivec2& pos, const glm::ivec3& color)
+void sr::Renderer::Discard()
 {
+	Window::GetInstance().m_DiscradPixel = true;
+}
+
+void sr::Renderer::FillPixel(const glm::ivec2& pos, const glm::ivec4& color)
+{
+	//if (Window::GetInstance().m_DiscradPixel)
+	//{
+	//	Window::GetInstance().m_DiscradPixel = false;
+	//	return;
+	//}
     uint8_t* pixel = GetPixel(pos);
     if (pixel == nullptr) return;
-    pixel[0] = color.z;
-    pixel[1] = color.y;
-    pixel[2] = color.x;
+	//glm::vec4 destinationColor = { pixel[2], pixel[1], pixel[0], pixel[3] };
+	//glm::vec4 blendedColor = AlphaBlend(glm::vec4(color) / 255.0f, glm::vec4(destinationColor) / 255.0f) * 255.0f;
+    pixel[0] = (uint8_t)color[2];
+    pixel[1] = (uint8_t)color[1];
+    pixel[2] = (uint8_t)color[0];
+	pixel[3] = (uint8_t)color[3];
+}
+
+glm::vec4 sr::Renderer::GammaCorrection(const glm::vec4& color, float gamma)
+{
+	glm::vec4 gammaCorrectedColor = glm::pow(glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f)), glm::vec4(1.0 / gamma));
+	gammaCorrectedColor.w = color.w;
+	return gammaCorrectedColor;
+}
+
+inline glm::vec4 sr::Renderer::AlphaBlend(const glm::vec4& a, const glm::vec4& b)
+{
+	return glm::vec4((a * a.w + b * b.w * (1 - a.w)) / (a.w + b.w * (1.0f - a.w)));
 }
 
 void sr::Renderer::DrawLine(Vertex& v1, Vertex& v2)
@@ -34,11 +59,11 @@ void sr::Renderer::DrawLine(Vertex& v1, Vertex& v2)
     glm::vec2 newStart = v1.m_FragPos;
     for (int i = 0; i < steps; i++)
     {
-		float scale1 = ((steps - i) / (float)steps);
+		float scale1 = ((float)(steps - i) / (float)steps);
 		float scale2 = 1.0f - scale1;
-		glm::ivec3 c = scale1 * glm::vec3(v1.m_Color) + scale2 * glm::vec3(v2.m_Color);
+		glm::ivec4 color = Lerp(v1.m_Color, v2.m_Color, scale2) * 255.0f;
         newStart += increment;
-        FillPixel(glm::ivec2(glm::ceil(newStart.x), glm::ceil(newStart.y)), c);
+        FillPixel(glm::ivec2(glm::round(newStart.x), glm::round(newStart.y)), color);
     }
 }
 
@@ -60,17 +85,17 @@ void sr::Renderer::FillTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 	}
 	else
 	{
-		//float t = ((v3.m_FragPos.y - v1.m_FragPos.y) - (v4.m_FragPos.y - v1.m_FragPos.y)) / (v3.m_FragPos.y - v1.m_FragPos.y);
-		float t = (float)(v2.m_FragPos.y - v1.m_FragPos.y) / (float)(v3.m_FragPos.y - v1.m_FragPos.y);
-		glm::vec2 scale = { 1.0f - t, t };
+		//float t = ((v3.m_FragPos.y - v1.m_FragPos.y) - (v2.m_FragPos.y - v1.m_FragPos.y)) / (v3.m_FragPos.y - v1.m_FragPos.y);
+		float t = (float)(v2.m_FragPos.y - v1.m_FragPos.y) / (float)((v3.m_FragPos.y - v1.m_FragPos.y));
+		glm::vec2 scale = { t, 1.0f - t };
 
 		Vertex v4;
-		v4.m_FragPos = Lerp(v1.m_FragPos, v3.m_FragPos, scale[1]);
-		v4.m_Color = Lerp(v1.m_Color, v3.m_Color, scale[1]);
-		v4.m_WorldPos = Lerp(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
-		v4.m_Normal = Lerp(v1.m_Normal, v3.m_Normal, scale[1]);
-		v4.m_UV = Lerp(v1.m_UV, v3.m_UV, scale[1]);
-		v4.m_Material = v2.m_Material;
+		v4.m_FragPos = Lerp(v1.m_FragPos, v3.m_FragPos, scale[0]);
+		v4.m_Color = Lerp(v1.m_Color, v3.m_Color, scale[0]);
+		v4.m_WorldPos = Lerp(v1.m_WorldPos, v3.m_WorldPos, scale[0]);
+		v4.m_Normal = Normalize(Lerp(v1.m_Normal, v3.m_Normal, scale[0]));
+		v4.m_UV = Lerp(v1.m_UV, v3.m_UV, scale[0]);
+		v4.m_Material = v1.m_Material;
 
 		if (v2.m_FragPos.x < v4.m_FragPos.x)
 		{
@@ -106,47 +131,39 @@ float* sr::Renderer::GetDepthPixel(const glm::ivec2& pos)
 
 void sr::Renderer::DrawFlatLine(Vertex& v1, Vertex& v2)
 {
-	//The dumbest way to get rid of gaps between triangles when clip against the top side of the screen
-	//Disabling can fix some flickering on edges (not sure)
-	if (v1.m_FragPos.x < v2.m_FragPos.x) v1.m_FragPos.x--;
-
 	Scene& scene = Scene::GetInstance();
 	Window& window = Window::GetInstance();
-	float distance = v2.m_FragPos.x - v1.m_FragPos.x;
-	int steps = glm::abs(distance);
-	if (steps == 0) return;
-	float increment = distance / (float)steps;
-	glm::vec2 newStart = v1.m_FragPos;
-	for (int i = 0; i < steps; i++)
+	for (int i = v1.m_FragPos.x; i < v2.m_FragPos.x; i++)
 	{
-		newStart.x += increment;
+		float t = (float)(v2.m_FragPos.x - i) / (float)(v2.m_FragPos.x - v1.m_FragPos.x);
 
-		float t = float(steps - i) / float(steps);
-		glm::vec2 scale = { t, 1.0f - t };
+		glm::ivec2 fragPos = glm::ivec2(glm::round(Lerp(v2.m_FragPos, v1.m_FragPos, t)));
+		glm::vec3 worldPos = Lerp(v2.m_WorldPos, v1.m_WorldPos, t);
+		glm::vec3 normal = Normalize(Lerp(v2.m_Normal, v1.m_Normal, t));
+		glm::vec2 uv = Lerp(v2.m_UV, v1.m_UV, t);
+		glm::vec4 color = Lerp(v2.m_Color, v1.m_Color, t);
 
-		glm::ivec2 fragPos = glm::ivec2(newStart);
-		glm::vec3 worldPos = Lerp(v2.m_WorldPos, v1.m_WorldPos, scale[0]);
-		glm::vec3 normal = Lerp(v2.m_Normal, v1.m_Normal, scale[0]);
-		glm::vec2 uv = Lerp(v2.m_UV, v1.m_UV, scale[0]);
-		glm::vec3 color = Lerp(v2.m_Color, v1.m_Color, scale[0]);
-		color *= (1.0f / 255.0f);
 		//Enabling can fix some flickering pixels due to synchronous writing to the depth buffer, but performance is much worse
-		//std::lock_guard lock(window.m_SyncParams.s_Mtx);
+		//std::lock_guard lock(window.m_SyncParams.s_ExtraMtx);
 		
 		float* depthPixel = GetDepthPixel(fragPos);
 		if (depthPixel != nullptr)
 		{
-			float z = Lerp(v2.m_FragPos.z, v1.m_FragPos.z, scale[0]);
-			uv *= 1.0 / z;
+			float z = Lerp(v2.m_FragPos.z, v1.m_FragPos.z, t);
+			uv *= 1.0f / z;
+			color *= 1.0f / z;
 			z = 1.0f - z;
 			if (z < *depthPixel)
 			{
-				*depthPixel = z;
+				{
+					//std::lock_guard lock(window.m_SyncParams.s_ExtraMtx);
+					*depthPixel = z;
+				}
 				switch (window.m_DrawBuffer)
 				{
 					case BUFFERSTATE::SHADER:
 					{
-						glm::ivec3 fragColor = scene.m_BindedShader->m_FragmentShader(
+						glm::ivec4 fragColor = scene.m_BindedShader->m_FragmentShader(
 							worldPos,
 							fragPos,
 							normal,
@@ -159,7 +176,8 @@ void sr::Renderer::DrawFlatLine(Vertex& v1, Vertex& v2)
 					break;
 					case BUFFERSTATE::DEPTH:
 					{
-						FillPixel(fragPos, glm::ivec3((1.0f - sqrtf(glm::abs(z))) * 255.0f));
+						size_t colorComponent = (sqrtf(glm::abs(z))) * 255.0f;
+						FillPixel(fragPos, glm::ivec4(colorComponent, colorComponent, colorComponent, 255));
 					}
 					break;
 				}	
@@ -171,10 +189,6 @@ void sr::Renderer::DrawFlatLine(Vertex& v1, Vertex& v2)
 
 void sr::Renderer::FillTopFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 {
-	v1.m_Color = glm::ivec3(150, 0, 0);
-	v2.m_Color = glm::ivec3(150, 0, 0);
-	v3.m_Color = glm::ivec3(150, 0, 0);
-	
 	glm::vec2 invSlope = {
 		(v3.m_FragPos.x - v1.m_FragPos.x) / (v3.m_FragPos.y - v1.m_FragPos.y),
 		(v3.m_FragPos.x - v2.m_FragPos.x) / (v3.m_FragPos.y - v2.m_FragPos.y)
@@ -187,27 +201,6 @@ void sr::Renderer::FillTopFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 
 	for (int y = yPos[0]; y < yPos[1]; y++)
 	{
-		float t = (float)(yPos[1] - y) / (float)(yPos[1] - yPos[0]);
-		glm::vec2 scale = { t, 1.0f - t };
-
-		glm::ivec3 color[2];
-		color[0] = Lerp(v1.m_Color, v3.m_Color, scale[1]);
-		color[1] = Lerp(v2.m_Color, v3.m_Color, scale[1]);
-
-		glm::vec2 z = { Lerp(v1.m_FragPos.z, v3.m_FragPos.z, scale[1]), Lerp(v2.m_FragPos.z, v3.m_FragPos.z, scale[1]) };
-
-		glm::vec3 worldPos[2];
-		worldPos[0] = Lerp(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
-		worldPos[1] = Lerp(v2.m_WorldPos, v3.m_WorldPos, scale[1]);
-
-		glm::vec3 normal[2];
-		normal[0] = Lerp(v1.m_Normal, v3.m_Normal, scale[1]);
-		normal[1] = Lerp(v2.m_Normal, v3.m_Normal, scale[1]);
-
-		glm::vec2 uvs[2];
-		uvs[0] = Lerp(v1.m_UV, v3.m_UV, scale[1]);
-		uvs[1] = Lerp(v2.m_UV, v3.m_UV, scale[1]);
-
 		glm::vec2 px = {
 			invSlope[0] * (float(y) + 0.5f - v1.m_FragPos.y) + v1.m_FragPos.x,
 			invSlope[1] * (float(y) + 0.5f - v2.m_FragPos.y) + v2.m_FragPos.x
@@ -218,19 +211,52 @@ void sr::Renderer::FillTopFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 			(int)ceilf(px[1] - 0.5f)
 		};
 
+		glm::vec2 fragPos[2];
+		fragPos[0] = glm::vec2(xPos[0], y);
+		fragPos[1] = glm::vec2(xPos[1], y);
+
+		glm::vec2 scale = {
+			glm::distance(fragPos[0], glm::vec2(v3.m_FragPos)) / glm::distance(glm::vec2(v1.m_FragPos), glm::vec2(v3.m_FragPos)),
+			glm::distance(fragPos[1], glm::vec2(v3.m_FragPos)) / glm::distance(glm::vec2(v2.m_FragPos), glm::vec2(v3.m_FragPos))
+		};
+		
+		//Bad way to interpolate
+		//float t = (float)(yPos[1] - y) / (float)(yPos[1] - yPos[0]);
+
+		glm::vec4 color[2];
+		color[0] = Lerp(v3.m_Color, v1.m_Color, scale[0]);
+		color[1] = Lerp(v3.m_Color, v2.m_Color, scale[1]);
+
+		glm::vec2 z = { Lerp(v3.m_FragPos.z, v1.m_FragPos.z, scale[0]), Lerp(v3.m_FragPos.z, v2.m_FragPos.z, scale[1]) };
+
+		glm::vec3 worldPos[2];
+		worldPos[0] = Lerp(v3.m_WorldPos, v1.m_WorldPos, scale[0]);
+		worldPos[1] = Lerp(v3.m_WorldPos, v2.m_WorldPos, scale[1]);
+
+		glm::vec3 normal[2];
+		normal[0] = Normalize(Lerp(v3.m_Normal, v1.m_Normal, scale[0]));
+		normal[1] = Normalize(Lerp(v3.m_Normal, v2.m_Normal, scale[1]));
+
+		glm::vec2 uvs[2];
+		uvs[0] = Lerp(v3.m_UV, v1.m_UV, scale[0]);
+		uvs[1] = Lerp(v3.m_UV, v2.m_UV, scale[1]);
+
 		Vertex vertex1 = { glm::vec3(xPos[0], y, z[0]), worldPos[0], normal[0], color[0], uvs[0], v1.m_Material };
 		Vertex vertex2 = { glm::vec3(xPos[1], y, z[1]), worldPos[1], normal[1], color[1], uvs[1], v2.m_Material };
 
-		DrawFlatLine(vertex1, vertex2);
+		if (xPos[0] < xPos[1])
+		{
+			DrawFlatLine(vertex1, vertex2);
+		}
+		else
+		{
+			DrawFlatLine(vertex2, vertex1);
+		}
 	}
 }
 
 void sr::Renderer::FillBottomFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 {
-	v1.m_Color = glm::ivec3(0, 0, 150);
-	v2.m_Color = glm::ivec3(0, 0, 150);
-	v3.m_Color = glm::ivec3(0, 0, 150);
-
 	glm::vec2 invSlope = {
 		(v2.m_FragPos.x - v1.m_FragPos.x) / (v2.m_FragPos.y - v1.m_FragPos.y),
 		(v3.m_FragPos.x - v1.m_FragPos.x) / (v3.m_FragPos.y - v1.m_FragPos.y)
@@ -243,27 +269,6 @@ void sr::Renderer::FillBottomFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 
 	for (int y = yPos[0]; y < yPos[1]; y++)
 	{
- 		float t = (float)(yPos[1] - y) / (float)(yPos[1] - yPos[0]);
-		glm::vec2 scale = { t, 1.0f - t };
-
-		glm::ivec3 color[2];
-		color[0] = Lerp(v1.m_Color, v2.m_Color, scale[1]);
-		color[1] = Lerp(v1.m_Color, v3.m_Color, scale[1]);
-
-		glm::vec2 z = { Lerp(v1.m_FragPos.z, v2.m_FragPos.z, scale[1]), Lerp(v1.m_FragPos.z, v3.m_FragPos.z, scale[1]) };
-
-		glm::vec3 worldPos[2];
-		worldPos[0] = Lerp(v1.m_WorldPos, v2.m_WorldPos, scale[1]);
-		worldPos[1] = Lerp(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
-
-		glm::vec3 normal[2];
-		normal[0] = Lerp(v1.m_Normal, v2.m_Normal, scale[1]);
-		normal[1] = Lerp(v1.m_Normal, v3.m_Normal, scale[1]);
-
-		glm::vec2 uvs[2];
-		uvs[0] = Lerp(v1.m_UV, v2.m_UV, scale[1]);
-		uvs[1] = Lerp(v1.m_UV, v3.m_UV, scale[1]);
-
 		glm::vec2 px = {
 			invSlope[0] * (float(y) + 0.5f - v1.m_FragPos.y) + v1.m_FragPos.x,
 			invSlope[1] * (float(y) + 0.5f - v1.m_FragPos.y) + v1.m_FragPos.x
@@ -273,10 +278,47 @@ void sr::Renderer::FillBottomFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 			(int)ceilf(px[0] - 0.5f),
 			(int)ceilf(px[1] - 0.5f)
 		};
-		
-		Vertex vertex1 = { glm::vec3(xPos[0], y, z[0]), worldPos[0], normal[0], color[0], uvs[0], v1.m_Material };
-		Vertex vertex2 = { glm::vec3(xPos[1], y, z[1]), worldPos[1], normal[1], color[1], uvs[1], v2.m_Material };
 
-		DrawFlatLine(vertex1, vertex2);
+		glm::vec2 fragPos[2];
+		fragPos[0] = glm::vec2(xPos[0], y);
+		fragPos[1] = glm::vec2(xPos[1], y);
+
+		glm::vec2 scale = {
+			glm::distance(fragPos[0], glm::vec2(v1.m_FragPos)) / glm::distance(glm::vec2(v2.m_FragPos), glm::vec2(v1.m_FragPos)),
+			glm::distance(fragPos[1], glm::vec2(v1.m_FragPos)) / glm::distance(glm::vec2(v3.m_FragPos), glm::vec2(v1.m_FragPos))
+		};
+
+		//Bad way to interpolate
+ 		//float t = (float)(yPos[1] - y) / (float)(yPos[1] - yPos[0]);
+
+		glm::vec4 color[2];
+		color[0] = Lerp(v1.m_Color, v2.m_Color, scale[0]);
+		color[1] = Lerp(v1.m_Color, v3.m_Color, scale[1]);
+
+		glm::vec2 z = { Lerp(v1.m_FragPos.z, v2.m_FragPos.z, scale[0]), Lerp(v1.m_FragPos.z, v3.m_FragPos.z, scale[1]) };
+
+		glm::vec3 worldPos[2];
+		worldPos[0] = Lerp(v1.m_WorldPos, v2.m_WorldPos, scale[0]);
+		worldPos[1] = Lerp(v1.m_WorldPos, v3.m_WorldPos, scale[1]);
+
+		glm::vec3 normal[2];
+		normal[0] = Normalize(Lerp(v1.m_Normal, v2.m_Normal, scale[0]));
+		normal[1] = Normalize(Lerp(v1.m_Normal, v3.m_Normal, scale[1]));
+
+		glm::vec2 uvs[2];
+		uvs[0] = Lerp(v1.m_UV, v2.m_UV, scale[0]);
+		uvs[1] = Lerp(v1.m_UV, v3.m_UV, scale[1]);
+
+		Vertex vertex1 = { glm::vec3(fragPos[0], z[0]), worldPos[0], normal[0], color[0], uvs[0], v1.m_Material };
+		Vertex vertex2 = { glm::vec3(fragPos[1], z[1]), worldPos[1], normal[1], color[1], uvs[1], v2.m_Material };
+
+		if (xPos[0] < xPos[1])
+		{
+			DrawFlatLine(vertex1, vertex2);
+		}
+		else
+		{
+			DrawFlatLine(vertex2, vertex1);
+		}
 	}
 }

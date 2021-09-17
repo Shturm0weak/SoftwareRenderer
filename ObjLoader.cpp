@@ -25,9 +25,9 @@ sr::Mesh* objl::Loader::Load(const std::string& filePath)
 				triangle.m_Indices[0] = curMesh.Indices[j + 0];
 				triangle.m_Indices[1] = curMesh.Indices[j + 1];
 				triangle.m_Indices[2] = curMesh.Indices[j + 2];
-				triangle.m_Color[0] = glm::ivec3(225, 225, 225);
-				triangle.m_Color[1] = glm::ivec3(225, 225, 225);
-				triangle.m_Color[2] = glm::ivec3(225, 225, 225);
+				triangle.m_Color[0] = glm::vec4(1.0f);
+				triangle.m_Color[1] = glm::vec4(1.0f);
+				triangle.m_Color[2] = glm::vec4(1.0f);
 				mesh->m_Triangles.push_back(triangle);
 			}
 			sr::Scene::GetInstance().m_Meshes.push_back(mesh);

@@ -16,6 +16,7 @@ namespace sr {
 	{
 	public:
 		std::mutex s_Mtx;
+		std::mutex s_ExtraMtx;
 		std::atomic<bool>* s_Ready = nullptr;
 		std::condition_variable s_CondVar;
 

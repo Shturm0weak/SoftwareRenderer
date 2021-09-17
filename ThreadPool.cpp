@@ -64,7 +64,7 @@ void ThreadPool::Init()
 {
 	if (m_IsInitialized == false)
 	{
-		s_Instance = new ThreadPool(thread::hardware_concurrency());
+		s_Instance = new ThreadPool(std::thread::hardware_concurrency() - 1);
 		m_IsInitialized = true;
 	}
 }

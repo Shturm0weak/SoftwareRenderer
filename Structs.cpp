@@ -38,7 +38,7 @@ void sr::Camera::RecalculateProjectionMatrix()
 void sr::Camera::Move()
 {
     Clamp();
-    float speed = 5.0f;
+    float speed = 7.0f;
     float rotationSpeed = 1.0f;
     float delta = Scene::GetInstance().m_Time.m_DeltaTime;
     if (Input::IsKeyDown(0x57))
@@ -108,14 +108,23 @@ sr::Texture* sr::Texture::Load(const std::string& filePath)
         std::cout << "Loading of <" << filePath << "> texture has failed\n";
         return nullptr;
     }
+    Scene::GetInstance().m_Textures.push_back(texture);
     return texture;
 }
 
-glm::vec3 sr::Texture::Sample(glm::vec2 uv)
+glm::vec4 sr::Texture::Sample(glm::vec2 uv)
 {
+    uv = glm::clamp(uv, glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
     glm::ivec2 pos = uv * glm::vec2(m_Size - 1);
     uint8_t* texel;
     int position = (pos.x + pos.y * m_Size.x) * m_BPP;
     texel = &((uint8_t*)m_LocalBuffer)[position];
-    return glm::vec3(texel[0], texel[1], texel[2]) * (1.0f / 255.0f);
+    return glm::vec4(texel[0], texel[1], texel[2], texel[3]) * (1.0f / 255.0f);
+}
+
+void sr::Vertex::operator*=(float invZ)
+{
+    m_FragPos *= invZ;
+    m_Color *= invZ;
+    m_UV *= invZ;
 }

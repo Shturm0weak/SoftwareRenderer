@@ -1,23 +1,16 @@
-﻿  Renderer.cpp
-C:\Users\Alexandr\source\repos\SoftwareRenderer\ThreadPool.h(51,40): warning C4267: return: преобразование из "size_t" в "uint32_t"; возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(30,15): warning C4244: инициализация: преобразование "genFIType" в "int", возможна потеря данных
-          with
-          [
-              genFIType=float
-          ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(116,12): warning C4244: инициализация: преобразование "genFIType" в "int", возможна потеря данных
-          with
-          [
-              genFIType=float
-          ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(162,65): warning C4244: аргумент: преобразование "float" в "T", возможна потеря данных
-          with
-          [
-              T=glm::i32
-          ]
+﻿  Scene.cpp
+C:\Users\Alexandr\source\repos\SoftwareRenderer\ThreadPool.h(52,40): warning C4267: return: преобразование из "size_t" в "uint32_t"; возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(203,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(164,16): warning C4101: tempPos: неиспользованная локальная переменная
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(214,42): warning C4244: аргумент: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(214,27): warning C4244: аргумент: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(221,42): warning C4244: аргумент: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(252,58): warning C4244: аргумент: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(252,43): warning C4244: аргумент: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Scene.cpp(259,57): warning C4244: аргумент: преобразование "float" в "size_t", возможна потеря данных
   Создание кода
-  5 of 2054 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+  0 of 2104 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    19 functions had inline decision re-evaluated but remain unchanged
+    0 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   SoftwareRenderer.vcxproj -> C:\Users\Alexandr\source\repos\SoftwareRenderer\x64\Release\SoftwareRenderer.exe
