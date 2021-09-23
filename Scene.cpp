@@ -74,7 +74,7 @@ void sr::Scene::DrawTriangle(GameObject& go, const TriangleInfo& triangle)
 	};
 
 	bool cullface = glm::dot(averageNormal, averageTransformedPoint - m_Camera.m_Position) < 0.0f;
-	if (cullface)
+	//if (cullface)
 	{
 		Triangle triangleToClip;
 		for (size_t i = 0; i < 3; i++)

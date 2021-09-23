@@ -233,9 +233,9 @@ void sr::Window::Update()
     //);
 }
 
-void sr::Window::Clear(const glm::ivec4& color)
+void sr::Window::Clear(const glm::vec4& color)
 {
-    auto ClearBitMapJob = [](const glm::ivec2& bitMapSize, const glm::ivec4& color, float* depthBuffer, size_t start, size_t end)
+    auto ClearBitMapJob = [](const glm::ivec2& bitMapSize, const glm::vec4& color, float* depthBuffer, size_t start, size_t end)
     {
         for (size_t i = start; i < end; i++)
         {

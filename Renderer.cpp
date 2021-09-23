@@ -20,21 +20,31 @@ void sr::Renderer::Discard()
 	Window::GetInstance().m_DiscradPixel = true;
 }
 
-void sr::Renderer::FillPixel(const glm::ivec2& pos, const glm::ivec4& color)
+void sr::Renderer::FillPixel(const glm::ivec2& pos, const glm::vec4& color, bool IsAlphaBlended)
 {
-	//if (Window::GetInstance().m_DiscradPixel)
-	//{
-	//	Window::GetInstance().m_DiscradPixel = false;
-	//	return;
-	//}
+	if (s_DiscradPixel)
+	{
+		s_DiscradPixel = false;
+		return;
+	}
     uint8_t* pixel = GetPixel(pos);
     if (pixel == nullptr) return;
-	//glm::vec4 destinationColor = { pixel[2], pixel[1], pixel[0], pixel[3] };
-	//glm::vec4 blendedColor = AlphaBlend(glm::vec4(color) / 255.0f, glm::vec4(destinationColor) / 255.0f) * 255.0f;
-    pixel[0] = (uint8_t)color[2];
-    pixel[1] = (uint8_t)color[1];
-    pixel[2] = (uint8_t)color[0];
-	pixel[3] = (uint8_t)color[3];
+	if (IsAlphaBlended)
+	{
+		glm::vec4 destinationColor = { pixel[2], pixel[1], pixel[0], pixel[3] };
+		glm::vec4 blendedColor = AlphaBlend(glm::vec4(color), glm::vec4(destinationColor) / 255.0f);
+		pixel[0] = (uint8_t)(blendedColor[2] * 255.0f);
+		pixel[1] = (uint8_t)(blendedColor[1] * 255.0f);
+		pixel[2] = (uint8_t)(blendedColor[0] * 255.0f);
+		pixel[3] = (uint8_t)(blendedColor[3] * 255.0f);
+	}
+	else
+	{
+		pixel[0] = (uint8_t)(color[2] * 255.0f);
+		pixel[1] = (uint8_t)(color[1] * 255.0f);
+		pixel[2] = (uint8_t)(color[0] * 255.0f);
+		pixel[3] = (uint8_t)(color[3] * 255.0f);
+	}
 }
 
 glm::vec4 sr::Renderer::GammaCorrection(const glm::vec4& color, float gamma)
@@ -61,7 +71,7 @@ void sr::Renderer::DrawLine(Vertex& v1, Vertex& v2)
     {
 		float scale1 = ((float)(steps - i) / (float)steps);
 		float scale2 = 1.0f - scale1;
-		glm::ivec4 color = Lerp(v1.m_Color, v2.m_Color, scale2) * 255.0f;
+		glm::ivec4 color = Lerp(v1.m_Color, v2.m_Color, scale2);
         newStart += increment;
         FillPixel(glm::ivec2(glm::round(newStart.x), glm::round(newStart.y)), color);
     }
@@ -85,7 +95,6 @@ void sr::Renderer::FillTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 	}
 	else
 	{
-		//float t = ((v3.m_FragPos.y - v1.m_FragPos.y) - (v2.m_FragPos.y - v1.m_FragPos.y)) / (v3.m_FragPos.y - v1.m_FragPos.y);
 		float t = (float)(v2.m_FragPos.y - v1.m_FragPos.y) / (float)((v3.m_FragPos.y - v1.m_FragPos.y));
 		glm::vec2 scale = { t, 1.0f - t };
 
@@ -163,21 +172,20 @@ void sr::Renderer::DrawFlatLine(Vertex& v1, Vertex& v2)
 				{
 					case BUFFERSTATE::SHADER:
 					{
-						glm::ivec4 fragColor = scene.m_BindedShader->m_FragmentShader(
+						glm::vec4 fragColor = scene.m_BindedShader->m_FragmentShader(
 							worldPos,
 							fragPos,
 							normal,
 							color,
 							uv,
 							*v1.m_Material
-						) * 255.0f;
-						FillPixel(fragPos, fragColor);
+						);
+						FillPixel(fragPos, fragColor, v1.m_Material->m_IsAlphaBlended);
 					}
 					break;
 					case BUFFERSTATE::DEPTH:
 					{
-						size_t colorComponent = (sqrtf(glm::abs(z))) * 255.0f;
-						FillPixel(fragPos, glm::ivec4(colorComponent, colorComponent, colorComponent, 255));
+						FillPixel(fragPos, glm::vec4(z, z, z, 1.0f));
 					}
 					break;
 				}	
@@ -219,9 +227,6 @@ void sr::Renderer::FillTopFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 			glm::distance(fragPos[0], glm::vec2(v3.m_FragPos)) / glm::distance(glm::vec2(v1.m_FragPos), glm::vec2(v3.m_FragPos)),
 			glm::distance(fragPos[1], glm::vec2(v3.m_FragPos)) / glm::distance(glm::vec2(v2.m_FragPos), glm::vec2(v3.m_FragPos))
 		};
-		
-		//Bad way to interpolate
-		//float t = (float)(yPos[1] - y) / (float)(yPos[1] - yPos[0]);
 
 		glm::vec4 color[2];
 		color[0] = Lerp(v3.m_Color, v1.m_Color, scale[0]);
@@ -287,9 +292,6 @@ void sr::Renderer::FillBottomFlatTriangle(Vertex& v1, Vertex& v2, Vertex& v3)
 			glm::distance(fragPos[0], glm::vec2(v1.m_FragPos)) / glm::distance(glm::vec2(v2.m_FragPos), glm::vec2(v1.m_FragPos)),
 			glm::distance(fragPos[1], glm::vec2(v1.m_FragPos)) / glm::distance(glm::vec2(v3.m_FragPos), glm::vec2(v1.m_FragPos))
 		};
-
-		//Bad way to interpolate
- 		//float t = (float)(yPos[1] - y) / (float)(yPos[1] - yPos[0]);
 
 		glm::vec4 color[2];
 		color[0] = Lerp(v1.m_Color, v2.m_Color, scale[0]);

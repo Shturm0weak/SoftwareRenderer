@@ -9,6 +9,7 @@
 std::unordered_map<int, sr::KeyProps> sr::Input::s_Keys;
 sr::ThreadPool* sr::ThreadPool::s_Instance;
 bool sr::ThreadPool::m_IsInitialized;
+bool sr::Renderer::s_DiscradPixel;
 
 int main(void)
 {
@@ -17,13 +18,13 @@ int main(void)
 	sr::Window& window = sr::Window::GetInstance();
 	std::wstring title = L"Software renderer";
 	window.Init(title, glm::ivec2(1024, 960), glm::vec2(20.0f));
-	scene.m_Camera.m_Position = glm::vec3(-3.2f, 4.0f, 0.0f);
-	scene.m_Camera.m_Yaw = glm::radians(-20.0f);
-	scene.m_Camera.m_Pitch = glm::radians(-20.0f);
-	sr::Mesh* model = objl::Loader::Load("assets/Sphere.obj");
+	//scene.m_Camera.m_Position = glm::vec3(-3.2f, 4.0f, 0.0f);
+	//scene.m_Camera.m_Yaw = glm::radians(-20.0f);
+	//scene.m_Camera.m_Pitch = glm::radians(-20.0f);
+	sr::Mesh* model = objl::Loader::Load("assets/Plane.obj");
 
 	sr::Texture::Load("assets/WhiteTexture.png");
-	sr::Texture* texture = sr::Texture::Load("assets/Earth.png");
+	sr::Texture* texture = sr::Texture::Load("assets/Heart.png");
 	/*for (size_t i = 0; i < 5; i++)
 	{
 		for (size_t j = 0; j < 5; j++)
@@ -38,14 +39,15 @@ int main(void)
 
 	sr::GameObject* go = new sr::GameObject;
 	go->m_Mesh = model;
-	//go->m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	//go->m_Transform.m_View = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	go->m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	go->m_Transform.m_View = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	go->m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(3.0f, 3.0f, 3.0f));
 	go->m_Material.m_Ambient = 0.4f;
 	go->m_Material.m_Specular = 0.8f;
-	go->m_Material.m_Texture = texture;
+	go->m_Material.m_Color = { 0.0f, 1.0f, 1.0f, 1.0f };
+	//go->m_Material.m_Texture = texture;
 
-	/*sr::GameObject* go1 = new sr::GameObject;
+	sr::GameObject* go1 = new sr::GameObject;
 	go1->m_Mesh = model;
 	go1->m_Transform.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 	go1->m_Transform.m_View = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -53,8 +55,9 @@ int main(void)
 	go1->m_Transform.m_Scale = glm::scale(glm::mat4(1.0f), glm::vec3(3.0f, 3.0f, 3.0f));
 	go1->m_Material.m_Ambient = 0.4f;
 	go1->m_Material.m_Specular = 0.2f;
-	go1->m_Material.m_Color = { 1.0f, 0.0f, 0.0f, 1.0f };
-	go1->m_Material.m_Texture = texture;*/
+	go1->m_Material.m_Color = { 1.0f, 1.0f, 0.0f, 0.5f };
+	go1->m_Material.m_IsAlphaBlended = true;
+	//go1->m_Material.m_Texture = texture;
 
 	sr::Shader shader;
 	shader.m_VertexShader = [](
@@ -91,6 +94,7 @@ int main(void)
 		const float gamma = 2.2f;
 		ambient += (diffuseStrength + specular) * diffuseTextureColor;
 		ambient = sr::Renderer::GammaCorrection(ambient, gamma);
+		ambient.w = material.m_Color.w * diffuseTextureColor.w * color.w;
 		return glm::clamp(ambient, glm::vec4(0.0f), glm::vec4(1.0f));
 	};
 	scene.m_BindedShader = &shader;
@@ -170,7 +174,7 @@ int main(void)
 		//go->m_Transform.m_View = glm::rotate(glm::mat4(1.0f), (float)scene.m_Time.m_GlobalTime, glm::vec3(1.0f, 0.0f, 0.0f));
 		
 		scene.m_Camera.Move();
-		window.Clear(glm::ivec4(255));
+		window.Clear(glm::vec4(1.0f));
 		scene.DrawGameObjects();
 		window.Update();
 	}

@@ -1,19 +1,23 @@
 ﻿  Renderer.cpp
 C:\Users\Alexandr\source\repos\SoftwareRenderer\ThreadPool.h(52,40): warning C4267: return: преобразование из "size_t" в "uint32_t"; возможна потеря данных
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(42,110): warning C4244: аргумент: преобразование "double" в "T", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(36,39): warning C4244: =: преобразование "float" в "uint8_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(37,39): warning C4244: =: преобразование "float" в "uint8_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(38,39): warning C4244: =: преобразование "float" в "uint8_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(39,39): warning C4244: =: преобразование "float" в "uint8_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(52,110): warning C4244: аргумент: преобразование "double" в "T", возможна потеря данных
           with
           [
               T=float
           ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(55,15): warning C4244: инициализация: преобразование "genFIType" в "int", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(65,15): warning C4244: инициализация: преобразование "genFIType" в "int", возможна потеря данных
           with
           [
               genFIType=float
           ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(141,13): warning C4244: инициализация: преобразование "T" в "int", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(145,13): warning C4244: инициализация: преобразование "T" в "int", возможна потеря данных
           with
           [
               T=float
           ]
-C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(184,29): warning C4244: инициализация: преобразование "float" в "size_t", возможна потеря данных
+C:\Users\Alexandr\source\repos\SoftwareRenderer\Renderer.cpp(188,29): warning C4244: инициализация: преобразование "float" в "size_t", возможна потеря данных
   SoftwareRenderer.vcxproj -> C:\Users\Alexandr\source\repos\SoftwareRenderer\x64\Debug\SoftwareRenderer.exe

@@ -27,6 +27,7 @@ namespace sr
 		Texture* m_Texture = nullptr;
 		float m_Specular = 0.1f;
 		float m_Ambient = 0.2f;
+		bool m_IsAlphaBlended = false;
 	};
 
 	struct Camera

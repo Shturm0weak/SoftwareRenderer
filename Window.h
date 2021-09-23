@@ -22,7 +22,7 @@ namespace sr
 		void SetTitle(const std::wstring& title);
 		void Update();
 		void Resize(const glm::ivec2& size);
-		void Clear(const glm::ivec4& color);
+		void Clear(const glm::vec4& color);
 		bool ProcessMessages();
 	public:
 
